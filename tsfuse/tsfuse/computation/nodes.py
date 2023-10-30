@@ -5,10 +5,9 @@ import inspect
 from functools import partial
 
 import numpy as np
-from data import Tags
+from tsfuse.data import Tags, Collection
 
-from data import Collection
-from errors import InvalidPreconditionError
+from tsfuse.errors import InvalidPreconditionError
 
 
 @six.add_metaclass(abc.ABCMeta)

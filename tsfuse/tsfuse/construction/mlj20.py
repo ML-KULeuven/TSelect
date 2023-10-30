@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
-from data import Collection
+from tsfuse.data import Collection
 
-from transformers import *
+from tsfuse.transformers import *
 from tsfuse.computation import Graph, Input
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -70,15 +70,16 @@ class TSFuseExtractor(TransformerMixin):
 
             print("     Series to series")
             self.series_to_series(data, metadata, select_non_redundant=self.series_filter is None)
-            print("             Number of fused signals: ", len(self.series_))
+            # print("             Number of fused signals: ", len(self.series_))
 
             if self.series_filter is not None:
                 print("     Filtering series")
                 start = time.process_time()
                 self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y, metadata)
                 self.set_subset_selected_series(self.series_filter.filtered_series)
-                metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                print("           Number of fused signals: ", len(self.series_))
+                if metadata:
+                    metadata[Keys.time_series_filtering].append(time.process_time() - start)
+                # print("           Number of fused signals: ", len(self.series_))
 
             print("     Series to attributes")
             self.series_to_attributes(data, metadata)

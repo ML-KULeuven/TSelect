@@ -1,9 +1,9 @@
 import numpy as np
 
-from data.units import units
-from computation import Transformer, Graph
-from transformers.mathematics import Sum, ArcCos
-from transformers.util import apply_to_axis
+from tsfuse.data.units import units
+from tsfuse.computation import Transformer, Graph
+from tsfuse.transformers.mathematics import Sum, ArcCos
+from tsfuse.transformers.util import apply_to_axis
 
 __all__ = [
     'Norm',

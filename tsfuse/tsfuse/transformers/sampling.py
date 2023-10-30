@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.signal as signal
 
-from computation import Transformer
-from transformers.util import apply_to_axis
+from tsfuse.computation import Transformer
+from tsfuse.transformers.util import apply_to_axis
 
 __all__ = [
     'Resample',

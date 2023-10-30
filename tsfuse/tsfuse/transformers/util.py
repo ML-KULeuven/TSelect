@@ -1,6 +1,6 @@
 import numpy as np
 
-from data import Collection
+from tsfuse.data import Collection
 
 __all__ = [
     'apply',

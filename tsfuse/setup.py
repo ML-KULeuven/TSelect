@@ -21,7 +21,6 @@ setup(
         'scikit-learn>=0.20.1',
         'statsmodels>=0.9.0',
         'Pint>=0.9',
-        'sklearn_gbmi>=1.0.3',
     ],
     extras_require={'test': [
         'pytest',

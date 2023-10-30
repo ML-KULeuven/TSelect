@@ -1,8 +1,8 @@
 import numpy as np
 
-from computation import Graph, Transformer, Constant
-from transformers.statistics import ArgMin, ArgMax
-from transformers.util import apply_to_axis
+from tsfuse.computation import Graph, Transformer, Constant
+from tsfuse.transformers.statistics import ArgMin, ArgMax
+from tsfuse.transformers.util import apply_to_axis
 
 __all__ = [
     'HasDuplicate',

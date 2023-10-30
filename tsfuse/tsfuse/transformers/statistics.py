@@ -3,12 +3,12 @@ from scipy import stats
 import statsmodels.tsa.ar_model
 from statsmodels.tools.sm_exceptions import MissingDataError
 
-from computation import Transformer, Graph, Constant
-from transformers.util import apply_to_axis, length
-from transformers.calculators.cstatistics import *
-from transformers.queries import Count, Slice
-from transformers.mathematics import Abs, Diff, Square, Sqrt, Roots, Exponent, Sum, CumSum
-from transformers.boolean import Equal
+from tsfuse.computation import Transformer, Graph, Constant
+from tsfuse.transformers.util import apply_to_axis, length
+from tsfuse.transformers.calculators.cstatistics import *
+from tsfuse.transformers.queries import Count, Slice
+from tsfuse.transformers.mathematics import Abs, Diff, Square, Sqrt, Roots, Exponent, Sum, CumSum
+from tsfuse.transformers.boolean import Equal
 
 __all__ = [
     'Length',

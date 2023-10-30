@@ -3,7 +3,7 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 
-# `python setup.py build_ext --inplace`
+# `python setup_cstatistics.py build_ext --inplace`
 
 setup(
     name="spearman_lib",

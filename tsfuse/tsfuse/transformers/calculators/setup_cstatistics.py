@@ -4,7 +4,7 @@ from Cython.Distutils import build_ext
 import numpy
 
 
-# `python setup.py build_ext --inplace`
+# `python setup_cstatistics.py build_ext --inplace`
 
 setup(
     name="cstatistics_lib",
