@@ -1,0 +1,16 @@
+
+.idea/
+
+tsfilter/build/
+
+tsfilter/dist/
+
+tsfilter/tsfilter.egg-info/
+
+tsfuse/.github/
+
+tsfuse/docs/
+
+tsfuse/docsource/
+
+tsfuse/tests/
