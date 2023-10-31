@@ -1,9 +1,9 @@
 import time
 import warnings
-from abc import ABC, abstractmethod
 from typing import Union, Dict
 
 import pandas as pd
+from sklearn.base import TransformerMixin
 
 from tsfilter.filters.tsfilter import TSFilter
 from tsfilter.utils import *
@@ -11,13 +11,14 @@ from tsfilter.utils.constants import SEED, Keys
 from tsfilter.utils.scaler import MinMaxScaler3D
 from tsfuse.computation import Input
 from tsfuse.construction.mlj20 import TSFuseExtractor
-from tsfuse.data import dict_collection_to_pd_multiindex, Collection
+from tsfuse.data import dict_collection_to_pd_multiindex, Collection, pd_multiindex_to_dict_collection
 
 
-class AbstractFilter(ABC):
+class FusionFilter(TransformerMixin):
     """
     An abstract class for filters. It contains the basic functionality that all filters should have.
     """
+
     def __init__(self, series_fusion: bool = True,
                  irrelevant_filter=True,
                  redundant_filter=True,
@@ -74,7 +75,6 @@ class AbstractFilter(ABC):
         self.irrelevant_filter = irrelevant_filter
         self.redundant_filter = redundant_filter
         self.series_filtering = irrelevant_filter or redundant_filter
-        self.optimized = optimized
         self.auc_percentage = auc_percentage
         self.auc_threshold = auc_threshold
         self.corr_threshold = corr_threshold
@@ -85,22 +85,15 @@ class AbstractFilter(ABC):
         self.random_state = random_state
 
         self.tsfuse_extractor = TSFuseExtractor(transformers='full', compatible=compatible, random_state=SEED)
-        self.series_filter = self.__init_filter__()
+        self.series_filter = TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
+                                      random_state=SEED, auc_percentage=self.auc_percentage,
+                                      filtering_threshold_corr=self.corr_threshold,
+                                      filtering_test_size=self.test_size) if self.series_filtering else None
         if self.series_filtering:
             self.tsfuse_extractor.series_filter = self.series_filter
 
         self.included_inputs = []
         self.nodes_translation = {}
-
-    def __init_filter__(self):
-        """
-        Initialize the filter. This function is called in the constructor and should be implemented by the child class
-        if non-default behavior is required (default behavior is the MiniRocketFilter).
-        """
-        return TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                        random_state=SEED, auc_percentage=self.auc_percentage,
-                        filtering_threshold_corr=self.corr_threshold,
-                        filtering_test_size=self.test_size) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
         """
@@ -146,25 +139,7 @@ class AbstractFilter(ABC):
             X = rename_keys_dict(X, self.nodes_translation)
         return self.series_filter.transform(X)
 
-    @abstractmethod
-    def transform_model(self, X):
-        """
-        Transform the data by applying the model. This function is called in the transform function and should be
-        implemented by the child class.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            The data to transform in the MultiIndex Pandas format.
-
-        Returns
-        -------
-        X : pd.DataFrame
-            The transformed data in the MultiIndex Pandas format.
-        """
-        pass
-
-    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]):
+    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], return_format='dataframe'):
         """
         Transform the data by applying fusion, filtering and the model.
 
@@ -172,6 +147,8 @@ class AbstractFilter(ABC):
         ----------
         X : Union[pd.DataFrame, Dict[Union[str, int], Collection]]
             The data to transform in the MultiIndex Pandas format or the TSFuse format.
+        return_format : str, optional, default 'dataframe'
+            The return format of the data. Can be 'dataframe' or 'tsfuse'.
 
         Returns
         -------
@@ -188,37 +165,28 @@ class AbstractFilter(ABC):
             if not X_tsfuse:
                 X_tsfuse = get_tsfuse_format(X, views=self.views, add_tags=self.add_tags)
             X_tsfuse = self.transform_fusion(X_tsfuse)
-            X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
+            # X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
 
         if self.series_filter and (not self.series_fusion):
             # If the series are fused, the tsfuse extractor takes care of only returning the filtered series
             X = self.transform_filter(X)
-            if isinstance(X, dict):
+            if isinstance(X, dict) and return_format == 'dataframe':
                 X_pd = dict_collection_to_pd_multiindex(X, index=X_pd.index if X_pd is not None else None)
 
-        if X_pd is None:
-            X_pd = dict_collection_to_pd_multiindex(X_tsfuse)
-        return self.transform_model(X_pd)
+        if return_format == 'tsfuse':
+            if X_pd is None or (self.series_filter is not None and self.series_fusion):
+                return X_tsfuse
+            else:
+                return pd_multiindex_to_dict_collection(X_pd, views=self.views, add_tags=self.add_tags)
+        elif return_format == 'dataframe':
+            if X_pd is None:
+                X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
+            return X_pd
+        else:
+            raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")
 
-    @abstractmethod
-    def fit_model(self, X, y):
-        """
-        Fit the model. This function is called in the fit function and should be implemented by the child class.
-
-        Parameters
-        ----------
-        X : pd.DataFrame
-            The data to fit in the MultiIndex Pandas format.
-        y : pd.Series
-            The target variable.
-
-        Returns
-        -------
-        None, but the model should be fitted.
-        """
-        pass
-
-    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None):
+    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None,
+            return_format='dataframe'):
         """
         Fit the model by applying fusion, filtering and fitting the model.
 
@@ -230,10 +198,14 @@ class AbstractFilter(ABC):
             The target variable.
         metadata : Dict[str, List[float]], optional, default None
             A dictionary containing the metadata of the experiment. If None, no metadata is collected.
+        return_format : str, optional, default 'dataframe'
+            The return format of the data. Can be 'dataframe' or 'tsfuse'.
 
         Returns
         -------
-        None, but the model and filter should be fitted.
+        X : pd.DataFrame or Dict[Union[str, int], Collection]
+            The fitted data in the MultiIndex Pandas format or TSFuse format, depending on the specified
+            `return_format`.
         """
         if isinstance(X, pd.DataFrame):
             X_pd = X
@@ -242,7 +214,6 @@ class AbstractFilter(ABC):
             X_pd = None
             X_tsfuse = X
 
-        self.task = detect_task(y) if self.task == 'auto' else self.task
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
@@ -283,13 +254,15 @@ class AbstractFilter(ABC):
                     else:
                         self.nodes_translation[new_node] = n
 
-            # Data is still in TSFuse format
-            if X_pd is None or (self.series_filter is not None and self.series_fusion):
-                X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
+            if return_format == 'tsfuse':
+                if X_pd is None or (self.series_filter is not None and self.series_fusion):
+                    return X_tsfuse
+                else:
+                    return pd_multiindex_to_dict_collection(X_pd, views=self.views, add_tags=self.add_tags)
 
-            print("     Executing model")
-            start = time.process_time()
-            self.fit_model(X_pd, y)
-            if metadata:
-                metadata[Keys.time_series_to_attr].append(time.process_time() - start)
-        return None
+            elif return_format == 'dataframe':
+                if X_pd is None:
+                    X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
+                return X_pd
+            else:
+                raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")

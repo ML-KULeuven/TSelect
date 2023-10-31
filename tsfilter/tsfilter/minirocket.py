@@ -3,15 +3,15 @@ from typing import List
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from tsfilter import SEED, AbstractFilter
-from tsfilter.filters.tsfilter import TSFilter
+from tsfilter import SEED
+from tsfilter.abstract_extractor import AbstractExtractor
 from tsfilter.utils import reset_first_level_index
 from sktime.transformations.panel.rocket import (
     MiniRocketMultivariateVariable,
 )
 
 
-class MiniRocketExtractor(AbstractFilter, TransformerMixin):
+class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
     """
     A class to extract features from time series using MiniRocket. It is a wrapper around sktime's
     MiniRocketMultivariate class. Additionally, it can derive new signals from the original ones ("fusion"), and
@@ -86,19 +86,19 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
                                                          n_jobs=n_jobs,
                                                          random_state=random_state)
 
-    def __init_filter__(self):
-        """
-        Initializes the filter to use for filtering out irrelevant and redundant signals.
-
-        Returns
-        -------
-        TSFilter
-            The filter to use for filtering out irrelevant and redundant signals. The used parameters are the ones
-            specified in the constructor of this class.
-        """
-        return TSFilter(random_state=SEED, auc_percentage=self.auc_percentage,
-                        filtering_threshold_corr=self.corr_threshold, filtering_test_size=self.test_size) \
-            if self.series_filtering else None
+    # def __init_filter__(self):
+    #     """
+    #     Initializes the filter to use for filtering out irrelevant and redundant signals.
+    #
+    #     Returns
+    #     -------
+    #     TSFilter
+    #         The filter to use for filtering out irrelevant and redundant signals. The used parameters are the ones
+    #         specified in the constructor of this class.
+    #     """
+    #     return TSFilter(random_state=SEED, auc_percentage=self.auc_percentage,
+    #                     filtering_threshold_corr=self.corr_threshold, filtering_test_size=self.test_size) \
+    #         if self.series_filtering else None
 
     def transform_model(self, X: pd.DataFrame):
         """

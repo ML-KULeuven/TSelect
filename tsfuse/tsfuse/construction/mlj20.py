@@ -28,7 +28,6 @@ class TSFuseExtractor(TransformerMixin):
                  transformers='full',
                  max_depth=3,
                  series_fusion=True,
-                 attribute_fusion=True,
                  series_filter=None,
                  max_series_permutations=10,
                  max_attribute_permutations=1000,
@@ -44,7 +43,6 @@ class TSFuseExtractor(TransformerMixin):
         self.max_depth = max_depth
         self.series_fusion = series_fusion
         self.series_filter = series_filter
-        self.attribute_fusion = attribute_fusion
         self.max_series_permutations = max_series_permutations
         self.max_attribute_permutations = max_attribute_permutations
         self.max_series_correlation = max_series_correlation

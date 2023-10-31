@@ -2,10 +2,10 @@ import pandas as pd
 import pycatch22
 from sklearn.base import TransformerMixin
 
-from tsfilter import AbstractFilter
+from tsfilter.abstract_extractor import AbstractExtractor
 
 
-class Catch22Extractor(AbstractFilter, TransformerMixin):
+class Catch22Extractor(AbstractExtractor, TransformerMixin):
     def transform_model(self, X: pd.DataFrame):
         """
         Transform the data by extracting features from it using Catch22. The average and standard deviation are also
