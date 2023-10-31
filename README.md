@@ -1,6 +1,26 @@
 # TSFilter
 
 ## Installation
+### Pip install
+TODO: publish to PyPI
+
+### Clone repository
+(Temporary until published)
+Clone the repository.
+```
+git clone https://github.com/LorenNuyts/TSFilter.git
+```
+Install the requirements with pip.
+```
+pip install -r requirements.txt
+```
+
+### Known issues
+On Windows, the installation of the pycatch22 package can fail. Installing the package with the following command
+usually fixes this.
+```
+pip install pycatch22=0.4.2 --use-deprecated=legacy-resolver
+```
 
 ## Examples
 ### Feature extraction with TSFuse
@@ -28,7 +48,8 @@ from tsfilter.filters.tsfilter import TSFilter
 
 [...] # load data, split in train and test set, etc.
 
-# If fusion is used, the `views`, `add_tags`, and `compatible` arguments must also be specified for correct data transformation. More information on these arguments can be found on [TSFuse](https://github.com/arnedb/tsfuse#data-format).
+# If fusion is used, the `views`, `add_tags`, and `compatible` arguments must also be specified for correct data transformation.
+# More information on these arguments can be found on [TSFuse](https://github.com/arnedb/tsfuse#data-format).
 extractor = MiniRocketExtractor(series_fusion=True, irrelevant_filter=True, redundant_filter=True)
 extractor.fit(x_train, y_train)
 features_train = extractor.transform(x_train)
