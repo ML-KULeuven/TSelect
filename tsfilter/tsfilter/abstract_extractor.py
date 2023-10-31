@@ -28,7 +28,7 @@ class AbstractExtractor(ABC):
                  compatible=lambda x: x,
                  random_state: int = SEED, ):
         """
-        The constructor for AbstractFilter class.
+        The constructor for AbstractExtractor class.
 
          Parameters
         ----------
