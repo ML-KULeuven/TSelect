@@ -5,7 +5,7 @@ from typing import Union, Dict
 
 import pandas as pd
 
-from tsfilter.filters.minirocketfilter import MiniRocketFilter
+from tsfilter.filters.tsfilter import TSFilter
 from tsfilter.utils import *
 from tsfilter.utils.constants import SEED, Keys
 from tsfilter.utils.scaler import MinMaxScaler3D
@@ -21,15 +21,13 @@ class AbstractFilter(ABC):
     def __init__(self, series_fusion: bool = True,
                  irrelevant_filter=True,
                  redundant_filter=True,
-                 optimized: bool = False,
                  auc_percentage: float = 0.75,
                  auc_threshold: float = 0.5,
                  corr_threshold: float = 0.7,
-                 test_size: float = 0.2,
+                 test_size: float = None,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
-                 task: str = 'auto',
                  random_state: int = SEED, ):
         """
         The constructor for AbstractFilter class.
@@ -42,8 +40,6 @@ class AbstractFilter(ABC):
             Whether to filter out irrelevant signals ("irrelevant filter").
         redundant_filter : bool, optional, default False
             Whether to filter out redundant signals ("redundant filter").
-        optimized : bool, optional, default False
-            Whether to use the optimized version for computing rank correlations in the redundant filter.
         auc_percentage : float, optional, default 0.75
             The percentage of the time series that will remain after the irrelevant filter. If the auc_threshold is
             0.75, the 75% time series with the highest AUC will remain.
@@ -54,7 +50,7 @@ class AbstractFilter(ABC):
         corr_threshold : float, optional, default 0.7
             The threshold used for clustering rank correlations. All predictions with a rank correlation above this
              threshold are considered correlated.
-        test_size : float, optional, default 0.2
+        test_size : float, optional, default None
             The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
             percentage of the data that is used for computing the AUC score. The remaining data is used for training.
             If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
@@ -71,9 +67,6 @@ class AbstractFilter(ABC):
             A function that adds tags to the data. This parameter is used to convert to the internal TSFuse Collection
             and describes what dimensions can be combined to derive new series. For more information on this,
             we refer to https://github.com/arnedb/tsfuse
-        task: str, default='auto'
-            The task to perform. Can be either 'auto', 'classification' or 'regression'. If 'auto', the task is inferred
-            from the data.
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
@@ -89,7 +82,6 @@ class AbstractFilter(ABC):
         self.views = views
         self.add_tags = add_tags
         self.compatible = compatible
-        self.task = task
         self.random_state = random_state
 
         self.tsfuse_extractor = TSFuseExtractor(transformers='full', compatible=compatible, random_state=SEED)
@@ -105,10 +97,10 @@ class AbstractFilter(ABC):
         Initialize the filter. This function is called in the constructor and should be implemented by the child class
         if non-default behavior is required (default behavior is the MiniRocketFilter).
         """
-        return MiniRocketFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                                num_kernels=100, random_state=SEED, optimized=self.optimized,
-                                auc_percentage=self.auc_percentage, filtering_threshold_corr=self.corr_threshold,
-                                filtering_test_size=self.test_size) if self.series_filtering else None
+        return TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
+                        random_state=SEED, auc_percentage=self.auc_percentage,
+                        filtering_threshold_corr=self.corr_threshold,
+                        filtering_test_size=self.test_size) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
         """
@@ -129,7 +121,7 @@ class AbstractFilter(ABC):
         dict_collection = {self.nodes_translation[k]: v for k, v in dict_collection.items()}
         inputs = {f'Input({i.name})': X_tsfuse[i.name] for i in self.included_inputs}
         dict_collection.update(inputs)
-        if isinstance(self.series_filter, MiniRocketFilter):
+        if isinstance(self.series_filter, TSFilter):
             dict_collection = self.series_filter.scaler.transform(dict_collection)
         return dict_collection
 

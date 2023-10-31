@@ -114,7 +114,7 @@ def pairwise_rank_correlation(ranks: dict) -> dict:
     return result
 
 
-def pairwise_rank_correlation_opt(ranks: dict, sorted_auc: List[tuple], corr_threshold: float) -> (dict, Set):
+def pairwise_rank_correlation_opt(ranks: dict) -> (dict, Set):
     """
     Computes the pairwise rank correlation between the elements in the input `ranks` dict.
 
@@ -300,11 +300,9 @@ def cluster_correlations(rank_correlations: dict, included_series: Set = None, t
 
         # Scenario 2: the pair of series are correlated and both are not allocated yet
         elif s1 in unallocated_set and s2 in unallocated_set:
-            # clusters.append({s1, s2})
             clusters.append([s1, s2])
             unallocated_set.remove(s1)
             unallocated_set.remove(s2)
-            # print("New cluster, there are now ", len(clusters), " clusters")
 
         # Scenario 3: the pair of series are correlated and both are already allocated
         elif s1 not in unallocated_set and s2 not in unallocated_set:
@@ -322,16 +320,12 @@ def cluster_correlations(rank_correlations: dict, included_series: Set = None, t
             clusters.remove(cluster2)
             if len(new_cluster1) > 1:
                 clusters.append(new_cluster1)
-                # print("Adapted cluster: size changed from ", len(cluster1), " to ", len(new_cluster1))
             else:
                 unallocated_set.update(set(new_cluster1))
-                # print("Removed one cluster, there are now ", len(clusters), " clusters")
             if len(new_cluster2) > 1:
                 clusters.append(new_cluster2)
-                # print("Adapted cluster: size changed from ", len(cluster2), " to ", len(new_cluster2))
             else:
                 unallocated_set.update(set(new_cluster2))
-                # print("Removed one cluster, there are now ", len(clusters), " clusters")
 
         # Scenario 4: the pair of series are correlated and one of the series is already allocated, but the other is not
         else:
@@ -339,18 +333,12 @@ def cluster_correlations(rank_correlations: dict, included_series: Set = None, t
             other_s = s1 if s1 in unallocated_set else s2
             cluster_ix = [i for i in range(len(clusters)) if allocated_s in clusters[i]][0]
 
-            # if optimized:
-            #     clusters[cluster_ix].add(other_s)
-            #     unallocated_set.remove(other_s)
-            #     continue
             correlated, corr = check_correlated(other_s, list(clusters[cluster_ix]), rank_correlations, threshold)
 
             # Scenario 4.1: other series highly correlated to all elements in the cluster -> add it
             if all(correlated):
-                # clusters[cluster_ix].add(other_s)
                 clusters[cluster_ix].append(other_s)
                 unallocated_set.remove(other_s)
-                # print("Adapted cluster: size changed incremented with 1 to", len(clusters[cluster_ix]))
 
             # Scenario 4.2: other series is not correlated to some elements in the cluster -> split cluster to maximize
             # intra cluster correlation
@@ -360,21 +348,13 @@ def cluster_correlations(rank_correlations: dict, included_series: Set = None, t
                 if len(cluster1) > 1:
                     clusters.append(cluster1)
                     unallocated_set = unallocated_set.difference(set(cluster1))
-                    # print("Adapted cluster by splitting: size changed from ", len(clusters[cluster_ix]), " to ", len(cluster1))
                 else:
                     unallocated_set.update(set(cluster1))
-                    # print("Removed one cluster, there are now ", len(clusters), " clusters")
                 if len(cluster2) > 1:
                     clusters.append(cluster2)
                     unallocated_set = unallocated_set.difference(set(cluster2))
-                    # print("Adapted cluster by splitting: size changed from ", len(clusters[cluster_ix]), " to ", len(cluster2))
                 else:
                     unallocated_set.update(set(cluster2))
-                    # print("Removed one cluster, there are now ", len(clusters), " clusters")
-
-    # result = []
-    # for c in clusters:
-    #     result.append(set(c))
 
     # Add unallocated series as separate clusters
     clusters.extend([[x] for x in unallocated_set])

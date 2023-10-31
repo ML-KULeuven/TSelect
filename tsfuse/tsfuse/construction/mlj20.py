@@ -70,7 +70,6 @@ class TSFuseExtractor(TransformerMixin):
 
             print("     Series to series")
             self.series_to_series(data, metadata, select_non_redundant=self.series_filter is None)
-            # print("             Number of fused signals: ", len(self.series_))
 
             if self.series_filter is not None:
                 print("     Filtering series")
@@ -79,13 +78,9 @@ class TSFuseExtractor(TransformerMixin):
                 self.set_subset_selected_series(self.series_filter.filtered_series)
                 if metadata:
                     metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                # print("           Number of fused signals: ", len(self.series_))
 
             print("     Series to attributes")
             self.series_to_attributes(data, metadata)
-
-            # print("     Attributes to attributes")
-            # self.attributes_to_attributes(data, y, metadata)
 
             print("     Selecting attributes")
             self.select_attributes(data, y, metadata)
@@ -252,65 +247,6 @@ class TSFuseExtractor(TransformerMixin):
             metadata[Keys.time_series_to_attr].append(time.process_time() - start)
             metadata[Keys.extracted_attr].append(len(self.extracted_attributes_))
 
-    # def attributes_to_attributes(self, data, y, metadata=None):
-    #     start = time.process_time()
-    #     permutations = None
-    #     # Start from extracted attributes
-    #     self.generated_attributes_ = []
-    #     # Generate attributes for increasing depths
-    #     if self.attribute_fusion:
-    #         attributes = self.extracted_attributes_[:]
-    #         transformers = self.transformers['attribute-to-attribute-nofusion']
-    #         transformers += self.transformers['attribute-to-attribute-fusion']
-    #         for depth in range(1, self.max_depth):
-    #             # Init
-    #             generated = []
-    #             nodes_c = [n for n in attributes if self.depth_[n.trace] < depth]
-    #             nodes_d = [n for n in attributes if self.depth_[n.trace] == depth]
-    #             # Generate nodes for all transformers
-    #             p_prev = 0
-    #             for t in sorted(transformers, key=self.num_parents):
-    #                 # start_transf = time.process_time()
-    #                 p = self.num_parents(t)
-    #                 if p != p_prev:
-    #                     # Generate compatible permutations
-    #                     permutations = []
-    #                     total_permutations_considered = 0
-    #                     for permutation in self.generate_permutations(nodes_c, nodes_d, p):
-    #                         total_permutations_considered += 1
-    #                         if (p > 1) and (len(permutations) >= self.max_attribute_permutations):
-    #                             break
-    #                         if self.check_compatible(data, permutation):  # and
-    #                             # t(*permutation).check_preconditions(*[data[n.trace] for n in permutation])):
-    #                             permutations.append(permutation)
-    #                     # Select interacting permutations
-    #                     permutations = self.select_interactions(data, y, permutations)
-    #                 # Create transformer node for each permutation
-    #                 for permutation in permutations:
-    #                     # start_perm = time.process_time()
-    #                     transformer = t(*permutation)
-    #                     # Check preconditions
-    #                     if not transformer.check_preconditions(*[data[n.trace] for n in permutation]):
-    #                         continue
-    #                     # Compute output
-    #                     output = transformer.transform(*[data[n.trace] for n in permutation])
-    #                     # Checked, now add the transformer to the generated nodes
-    #                     if output is not None:
-    #                         generated.append(transformer)
-    #                         data[transformer.trace] = output
-    #                         self.depth_[transformer.trace] = depth + 1
-    #             # Done for depth
-    #             attributes += generated
-    #             self.generated_attributes_ += generated
-    #
-    #     # print("     | Time transformers: ", time_transf)
-    #     # print("         | Time interactions: ", time_interactions)
-    #     # print("         | Time permutations: ", time_permutations)
-    #
-    #     if metadata:
-    #         metadata[Keys.time_attr_to_attr].append(time.process_time() - start)
-    #         metadata[Keys.fused_attr].append(len(self.generated_attributes_))
-
     def select_attributes(self, data, y, metadata=None):
         start = time.process_time()
 
@@ -434,47 +370,6 @@ class TSFuseExtractor(TransformerMixin):
 
         # Done
         return selected
-
-    # def select_interactions(self, data, y, permutations):
-    #     start = time.process_time()
-    #     # Collect data for the nodes in the permutations only
-    #     permutations_nodes = set()
-    #     for permutation in permutations:
-    #         for node in permutation:
-    #             permutations_nodes.add(node)
-    #     # Convert to DataFrame and drop columns with inf/-inf/nan values
-    #     if len(permutations_nodes) == 0:
-    #         return []
-    #     data_permutations = to_dataframe({n: data[n.trace] for n in permutations_nodes})
-    #     data_permutations = data_permutations.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
-    #     data_permutations = data_permutations.astype('float32')
-    #     data_permutations = data_permutations.loc[:, np.isfinite(data_permutations.values).all(axis=0)]
-    #     if data_permutations.shape[1] == 0:
-    #         return []
-    #     # Fit a gradient boosted tree model using sklearn
-    #     start_fit = time.process_time()
-    #     if self.task_ == 'classification':
-    #         gbr = GradientBoostingClassifier(random_state=self.random_state).fit(data_permutations, y)
-    #     else:
-    #         gbr = GradientBoostingRegressor(random_state=self.random_state).fit(data_permutations, y)
-    #     time_fit = time.process_time() - start_fit
-    #     # Compute H-values
-    #     start_h = time.process_time()
-    #     hvalues = pd.Series(index=[str(p) for p in permutations])
-    #     for permutation in permutations:
-    #         if all(str(n) in data_permutations.columns for n in permutation):
-    #             hvalue = h(gbr, data_permutations.loc[:, [str(n) for n in permutation]])
-    #             hvalues.loc[str(permutation)] = hvalue
-    #     # time_h = time.process_time() - start_h
-    #     # Select permutations with large enough H-values
-    #     # start_select = time.process_time()
-    #     selected = hvalues.loc[hvalues > self.interaction]
-    #     # time_select = time.process_time() - start_select
-    #     # print("           | Time fit: ", time_fit)
-    #     # print("           | Time h: ", time_h)
-    #     # print("           | Time select: ", time_select)
-    #     # print("           | Time total: ", time.process_time() - start)
-    #     return [p for p in permutations if str(p) in selected.index]
 
     def detect_task(self, y):
         if np.issubdtype(y, np.float64):

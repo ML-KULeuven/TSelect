@@ -17,7 +17,7 @@ setup(
     install_requires=[
         'six>=1.16.0',
         'graphviz>=0.20.1',
-        'scipy>=1.11.3',
+        'scipy>=1.10.1',
         'scikit-learn>=1.1.3',
         'statsmodels>=0.14.0',
         'Pint>=0.21.1',

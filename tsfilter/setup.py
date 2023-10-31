@@ -19,7 +19,7 @@ setup(
         'scikit_learn>=1.1.3',
         'sktime>=0.23.1',
         'Deprecated~=1.2.14',
-        'scipy~=1.11.3',
+        'scipy~=1.10.1',
     ],
     ext_modules=cythonize([
             Extension(

@@ -1,4 +1,3 @@
-import time
 from _operator import itemgetter
 from math import ceil
 from typing import Union, Dict
@@ -11,27 +10,19 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from sktime.datatypes._panel._convert import from_3d_numpy_to_multi_index
-from sktime.transformations.panel.rocket import MiniRocket
 
 from tsfilter.utils.constants import SEED
 from tsfilter.utils import *
 
-from tsfuse.data import Collection, dict_collection_to_numpy3d
+from tsfuse.data import Collection
 from tsfuse.transformers import SinglePassStatistics
 from tsfuse.utils import encode_onehot
 from tsfilter.rank_correlation.rank_correlation import *
 
-# FILTERING_MODE = 'minirocket'
-FILTERING_MODE = 'statistics'
 
-
-class MiniRocketFilter(TransformerMixin):
+class TSFilter(TransformerMixin):
     """
-    A class for selecting a relevant and non-redundant set of signals, using MiniRocket as a feature extractor. There is
-    also support for using Catch22 as a feature extractor, but this is not recommended, as it is much slower than
-    MiniRocket. No feature extractor is also supported, but this is not recommended, as the predictive performance is
-    much worse than when using MiniRocket.
+    A class for selecting a relevant and non-redundant set of signals.
     Filtering is done in two steps: first, irrelevant series are filtered out based on their AUC score. Second,
     redundant series are filtered out based on their rank correlation. The rank correlation is computed using the
     Spearman rank correlation.
@@ -40,16 +31,11 @@ class MiniRocketFilter(TransformerMixin):
     def __init__(self,
                  irrelevant_filter=True,
                  redundant_filter=True,
-                 num_kernels: int = 100,
-                 max_dilations_per_kernel: int = 32,
-                 n_jobs: int = 1,
-                 task: str = 'auto',
                  random_state: int = SEED,
                  filtering_threshold_auc: float = 0.5,
                  auc_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
                  filtering_test_size: float = None,
-                 optimized: bool = False,
                  ):
         """
         Parameters
@@ -58,15 +44,7 @@ class MiniRocketFilter(TransformerMixin):
             Whether to filter out irrelevant series based on their AUC score
         redundant_filter: bool, default=True
             Whether to filter out redundant series based on their rank correlation
-        num_kernels: int, default=100
-            The number of kernels to use in MiniRocket
-        max_dilations_per_kernel: int, default=32
-            The maximum number of dilations per kernel to use in MiniRocket
-        n_jobs: int, default=1
             The number of jobs to use in MiniRocket
-        task: str, default='auto'
-            The task to perform. Can be either 'auto', 'classification' or 'regression'. If 'auto', the task is inferred
-            from the data.
         random_state: int, default=SEED
             The random state used throughout the class.
         filtering_threshold_auc: float, default=0.5
@@ -81,17 +59,11 @@ class MiniRocketFilter(TransformerMixin):
         filtering_test_size: float, default=None
             The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
             percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-            If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
+            If None, the train size is derived from max(100, 0.25*nb_instances). The test set then contains the remaining
             instances.
-        optimized: bool, default=False
-            Whether to use the optimized version for computing rank correlations. This version is faster, but slightly
-            hurts the predictive performance.
         """
-        self.minirocket = MiniRocket(num_kernels=num_kernels, max_dilations_per_kernel=max_dilations_per_kernel,
-                                     n_jobs=n_jobs, random_state=random_state)
         self.irrelevant_filter = irrelevant_filter
         self.redundant_filter = redundant_filter
-        self.task = task
         self.random_state = random_state
         self.filtering_threshold_auc = filtering_threshold_auc
         self.filtering_threshold_corr = filtering_threshold_corr
@@ -105,10 +77,8 @@ class MiniRocketFilter(TransformerMixin):
         self.filtered_series = None
         self.selected_col_nb = None
         self._sorted_auc: Optional[List[Union[str, int]]] = None
-        self.optimized = optimized
         self.auc_percentage = auc_percentage
         self.features = None
-        self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0}
         self.scaler = None
         self.columns = None
         self.map_columns_np = None
@@ -134,8 +104,7 @@ class MiniRocketFilter(TransformerMixin):
         elif isinstance(X, dict):
             return {k: v for k, v in X.items() if k in self.filtered_series}
 
-    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False,
-            mode=FILTERING_MODE) -> None:
+    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False,) -> None:
         """
         Fit the filter to the data.
 
@@ -149,10 +118,6 @@ class MiniRocketFilter(TransformerMixin):
             The metadata to update with the results of the filter. If no metadata is provided, no metadata is updated.
         force: bool
             Whether to force the filter to be retrained, even if it has already been trained.
-        mode: str, default='minirocket'
-            The mode to use for filtering. Can be either 'raw', 'minirocket' or 'catch22'. If 'raw', the raw data is
-            used. If 'minirocket', the data is transformed using MiniRocket. If 'catch22', the data is transformed
-            using Catch22.
 
         Returns
         -------
@@ -168,30 +133,24 @@ class MiniRocketFilter(TransformerMixin):
             self.index = X.index
         elif isinstance(X, dict):
             X_tsfuse = self.preprocessing_dict(X)
-            self.tsfuse_format = True
             self.columns = list(X.keys())
             self.index = X_tsfuse[self.columns[0]].index
 
         if self.filtered_series is not None and not force:
             return None
-        ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y, mode)
+        ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y,)
         if self.irrelevant_filter:
-            start = time.process_time()
             ranks = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
 
             if len(ranks) == 0:
                 raise ValueError(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
                                  f" was {highest_removed_auc}.")
             elif len(ranks) == 1 and self.redundant_filter:
-                print("     Only one series passed the AUC filtering, no need to compute rank correlations")
                 self.rank_correlation = dict()
                 self.clusters = [list(ranks.keys())]
                 self.filtered_series = list(ranks.keys())
                 self.update_metadata(metadata)
-                # X_filtered = X_np[:, self.map_columns_np[self.filtered_series[0]], :]
-                # return numpy3d_to_multiindex(X_filtered, column_names=self.filtered_series, index=self.index)
                 return None
-            print("         Time AUC filtering: ", time.process_time() - start)
 
         if self.redundant_filter:
             self.redundant_filtering(ranks)
@@ -202,6 +161,20 @@ class MiniRocketFilter(TransformerMixin):
         return None
 
     def preprocessing(self, X: pd.DataFrame) -> np.ndarray:
+        """
+        Preprocess the data before fitting the filter.
+
+        Parameters
+        ----------
+        X: pd.DataFrame
+            The data to preprocess
+
+        Returns
+        -------
+        np.ndarray
+            The preprocessed data
+
+        """
         from tsfilter import MinMaxScaler3D
         self.scaler = MinMaxScaler3D()
         X_np = self.scaler.fit_transform(X)
@@ -210,6 +183,20 @@ class MiniRocketFilter(TransformerMixin):
         return X_np
 
     def preprocessing_dict(self, X: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
+        """
+        Preprocess the data before fitting the filter if the data is in TSFuse format.
+
+        Parameters
+        ----------
+        X: Dict[Union[str, int], Collection]
+            The data to preprocess
+
+        Returns
+        -------
+        Dict[Union[str, int], Collection]
+            The preprocessed data in TSFuse format
+
+        """
         from tsfilter.utils.scaler import MinMaxScalerCollections
         self.scaler = MinMaxScalerCollections()
         scaled_X = self.scaler.fit_transform(X, inplace=True)
@@ -218,7 +205,7 @@ class MiniRocketFilter(TransformerMixin):
                 ffill_nan(scaled_X[key].values, inplace=True)
         return scaled_X
 
-    def train_models(self, X_np, X_tsfuse, y: pd.Series, mode: str = FILTERING_MODE) -> (dict, float):
+    def train_models(self, X_np, X_tsfuse, y: pd.Series) -> (dict, float):
         """
         Train the models for each dimension and compute the AUC score for each dimension.
 
@@ -230,10 +217,6 @@ class MiniRocketFilter(TransformerMixin):
             The data to fit the filter to in TSFuse format.
         y: pd.Series
             The target variable
-        mode: str, default='minirocket'
-            The mode to use for filtering. Can be either 'raw', 'minirocket' or 'catch22'. If 'raw', the raw data is
-            used for training. If 'minirocket', the data is transformed using MiniRocket. If 'catch22', the data is
-            transformed using Catch22.
 
         Returns
         -------
@@ -242,7 +225,6 @@ class MiniRocketFilter(TransformerMixin):
         float
             The highest AUC score that was removed because it was below the AUC threshold
         """
-        start = time.process_time()
         if X_np is None:
             X = X_tsfuse
             tsfuse_format = True
@@ -253,27 +235,14 @@ class MiniRocketFilter(TransformerMixin):
         train_ix, test_ix = self.train_test_split(X)
         y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
         highest_removed_auc = 0
-        if mode == 'minirocket':
-            # Pad until length 9 (required for MiniRocket)
-            if not tsfuse_format and X.shape[1] < 9:
-                X = pad_until_length_np(X, 9)
-            elif tsfuse_format and X_tsfuse[list(X.keys())[0]].shape[1] < 9:
-                X = pad_until_length_tsfuse(X, 9)
 
         for i, col in enumerate(self.columns):
-            start2 = time.process_time()
-            features_train, features_test = self.extract_features(X, col, train_ix, test_ix, y_train, mode, i,
+            features_train, features_test = self.extract_features(X, col, train_ix, test_ix,
                                                                   tsfuse_format=tsfuse_format)
-            self.times["Extracting features"] += time.process_time() - start2
-            # print("         |   Time extracting features: ", time.process_time() - start2)
 
-            start2 = time.process_time()
             clf = LogisticRegression(random_state=self.random_state)
             clf.fit(features_train, y_train)
-            # print("         |   Time training_model: ", time.process_time() - start2)
-            self.times["Training model"] += time.process_time() - start2
             if np.isnan(features_test).any():
-                print("###################Nan values in the test set, removing them###################")
                 nan_rows = np.isnan(features_test).any(axis=1)
                 features_test = features_test[~nan_rows, :]
                 y_test_no_nan = y_test.iloc[~nan_rows]
@@ -284,10 +253,7 @@ class MiniRocketFilter(TransformerMixin):
                 raise ValueError("Not all classes are present in the test set, increase the test size to be able to "
                                  "compute the AUC")
 
-            start2 = time.process_time()
             auc_col = roc_auc_score(encode_onehot(y_test_no_nan), predict_proba)
-            self.times["Computing AUC"] += time.process_time() - start2
-            # print("         |   Time computing AUC: ", time.process_time() - start2)
 
             if self.irrelevant_filter:
                 # Test AUC series high enough
@@ -300,10 +266,6 @@ class MiniRocketFilter(TransformerMixin):
             self.acc_col[col] = clf.score(features_test, y_test_no_nan)
             self.auc_col[col] = auc_col
             ranks[col] = probabilities2rank(predict_proba)
-        print("         Total: Time AUC per series: ", time.process_time() - start)
-        print("             | Time extracting features: ", self.times["Extracting features"])
-        print("             | Time training model: ", self.times["Training model"])
-        print("             | Time computing AUC: ", self.times["Computing AUC"])
         return ranks, highest_removed_auc
 
     def redundant_filtering(self, ranks: dict):
@@ -315,22 +277,11 @@ class MiniRocketFilter(TransformerMixin):
         ranks: dict
             A dictionary with the rank for each dimension in the format {(signal1, signal2): rank}
         """
-        start = time.process_time()
-        if self.optimized:
-            self.rank_correlation, included_series = \
-                pairwise_rank_correlation_opt(ranks, self.sorted_auc, corr_threshold=self.filtering_threshold_corr)
-
-        else:
-            self.rank_correlation = pairwise_rank_correlation(ranks)
-            included_series = set(ranks.keys())
-        print("         Time computing rank correlations: ", time.process_time() - start)
-        start = time.process_time()
+        self.rank_correlation = pairwise_rank_correlation(ranks)
+        included_series = set(ranks.keys())
         self.clusters = cluster_correlations(self.rank_correlation, included_series,
                                              threshold=self.filtering_threshold_corr)
-        print("         Time clustering: ", time.process_time() - start)
-        start = time.process_time()
         self.filtered_series = self.choose_from_clusters()
-        print("         Time choose from cluster: ", time.process_time() - start)
 
     def update_metadata(self, metadata):
         """
@@ -344,8 +295,7 @@ class MiniRocketFilter(TransformerMixin):
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
-    def extract_features(self, X, col, train_ix, test_ix, y_train, mode, i, tsfuse_format=False) -> (
-            np.ndarray, np.ndarray):
+    def extract_features(self, X, col, train_ix, test_ix, tsfuse_format=False) -> (np.ndarray, np.ndarray):
         """
         Extract the features for a single dimension.
 
@@ -359,14 +309,6 @@ class MiniRocketFilter(TransformerMixin):
             The indices of the training set
         test_ix: list
             The indices of the test set
-        y_train: pd.Series
-            The target variable of the training set
-        mode: str
-            The mode to use for filtering. Can be either 'raw', 'minirocket' or 'catch22'. If 'raw', the raw data is
-            used for training. If 'minirocket', the data is transformed using MiniRocket. If 'catch22', the data is
-            transformed using Catch22.
-        i: int
-            The index of the dimension to extract the features from, needed for the raw or catch22 mode.
         tsfuse_format: bool, default=False
             Whether the data `X` is in TSFuse format or not.
 
@@ -377,43 +319,12 @@ class MiniRocketFilter(TransformerMixin):
         np.ndarray
             The features of the test set
         """
-        if mode == 'raw':
-            if tsfuse_format:
-                X = dict_collection_to_numpy3d(X)
-            features_train, features_test = X[train_ix, :, i], X[test_ix, :, i]
-        elif mode == 'catch22':
-            if tsfuse_format:
-                X = dict_collection_to_numpy3d(X)
-            features = catch22_features_numpy(X[:, :, i], catch24=True)
-            features_train = features[train_ix, :]
-            features_test = features[test_ix, :]
-        elif mode == 'minirocket':
-            if tsfuse_format:
-                X_selected = X[col].values
-            else:
-                X_selected = X[:, i, :]
-            X_selected = X_selected.reshape(X_selected.shape[0], 1, X_selected.shape[1])
-            X_selected = remove_trailing_nans_np(X_selected)
+        if not tsfuse_format:
+            X = get_tsfuse_format(X)
+        stats = SinglePassStatistics().transform(X[col]).values[:, :, 0]
+        features_train = stats[train_ix, :]
+        features_test = stats[test_ix, :]
 
-            # Pad until length 9 if trailing nans cause length to decrease (required for MiniRocket)
-            if X_selected.shape[1] < 9:
-                X_selected = pad_until_length_np(X_selected, 9)
-
-            X_selected = from_3d_numpy_to_multi_index(X_selected, column_names=self.columns)
-            X_train, X_test = X_selected.loc[train_ix], X_selected.loc[test_ix]
-            features_train_pd = self.minirocket.fit_transform(X_train, y_train)
-            features_train = features_train_pd.to_numpy()
-            features_test_pd = self.minirocket.transform(X_test)
-            features_test = features_test_pd.to_numpy()
-        elif mode == 'statistics':
-            if not tsfuse_format:
-                X = get_tsfuse_format(X)
-            stats = SinglePassStatistics().transform(X[col]).values[:, :, 0]
-            features_train = stats[train_ix, :]
-            features_test = stats[test_ix, :]
-
-        else:
-            raise ValueError("Mode must be either 'raw', 'minirocket', 'catch22' or 'statistics'")
         # Drop all NaN columns
         if np.isnan(features_train).any():
             nan_cols = np.isnan(features_train).all(axis=0)
@@ -448,7 +359,6 @@ class MiniRocketFilter(TransformerMixin):
         """
         nb_instances = get_nb_instances_multiindex(X)
         test_size = self.compute_test_size(nb_instances)
-        print("         Test size: ", test_size)
         train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
                                                      test_size=test_size,
                                                      random_state=self.random_state)
@@ -478,7 +388,6 @@ class MiniRocketFilter(TransformerMixin):
         else:
             nb_instances = X.shape[0]
         test_size = self.compute_test_size(nb_instances)
-        print("         Test size: ", test_size)
         train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
                                                      test_size=test_size,
                                                      random_state=self.random_state)

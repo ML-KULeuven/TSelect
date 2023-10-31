@@ -3,10 +3,10 @@ from typing import List
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from tsfilter import SEED, AbstractFilter, MiniRocketFilter
+from tsfilter import SEED, AbstractFilter
+from tsfilter.filters.tsfilter import TSFilter
 from tsfilter.utils import reset_first_level_index
 from sktime.transformations.panel.rocket import (
-    # MiniRocketMultivariate,
     MiniRocketMultivariateVariable,
 )
 
@@ -21,7 +21,6 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
     def __init__(self, series_fusion: bool = False,
                  irrelevant_filter: bool = False,
                  redundant_filter: bool = False,
-                 optimized: bool = False,
                  auc_percentage: float = 0.75,
                  auc_threshold: float = 0.5,
                  corr_threshold: float = 0.7,
@@ -32,7 +31,6 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
                  num_kernels: int = 10_000,
                  max_dilations_per_kernel: int = 32,
                  n_jobs: int = 1,
-                 task: str = 'auto',
                  random_state: int = SEED):
         """
         The constructor for MiniRocketExtractor class.
@@ -45,8 +43,6 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
             Whether to filter out irrelevant signals ("irrelevant filter").
         redundant_filter : bool, optional, default False
             Whether to filter out redundant signals ("redundant filter").
-        optimized : bool, optional, default False
-            Whether to use the optimized version for computing rank correlations in the redundant filter.
         auc_percentage : float, optional, default 0.75
             The percentage of the time series that will remain after the irrelevant filter. If the auc_threshold is
             0.75, the 75% time series with the highest AUC will remain.
@@ -80,14 +76,11 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
             The maximum number of dilations per kernel to use for the MiniRocket transformation.
         n_jobs : int, optional, default 1
             The number of jobs to use MiniRocket.
-        task: str, default='auto'
-            The task to perform. Can be either 'auto', 'classification' or 'regression'. If 'auto', the task is inferred
-            from the data.
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
-        super().__init__(series_fusion, irrelevant_filter, redundant_filter, optimized, auc_percentage, auc_threshold,
-                         corr_threshold, test_size, views, add_tags, compatible, task, random_state)
+        super().__init__(series_fusion, irrelevant_filter, redundant_filter, auc_percentage, auc_threshold,
+                         corr_threshold, test_size, views, add_tags, compatible, random_state)
         self.minirocket = MiniRocketMultivariateVariable(num_kernels=num_kernels,
                                                          max_dilations_per_kernel=max_dilations_per_kernel,
                                                          n_jobs=n_jobs,
@@ -99,13 +92,12 @@ class MiniRocketExtractor(AbstractFilter, TransformerMixin):
 
         Returns
         -------
-        MiniRocketFilter
+        TSFilter
             The filter to use for filtering out irrelevant and redundant signals. The used parameters are the ones
             specified in the constructor of this class.
         """
-        return MiniRocketFilter(num_kernels=100, random_state=SEED, optimized=self.optimized,
-                                auc_percentage=self.auc_percentage, filtering_threshold_corr=self.corr_threshold,
-                                filtering_test_size=self.test_size) \
+        return TSFilter(random_state=SEED, auc_percentage=self.auc_percentage,
+                        filtering_threshold_corr=self.corr_threshold, filtering_test_size=self.test_size) \
             if self.series_filtering else None
 
     def transform_model(self, X: pd.DataFrame):
