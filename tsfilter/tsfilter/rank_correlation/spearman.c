@@ -3,17 +3,15 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "extra_compile_args": [
-            "-O3",
-            "-mavx",
-            "-mavx2"
+        "include_dirs": [
+            "/home/loren/Code/TSFilter-experiments/venv/lib/python3.8/site-packages/numpy/core/include"
         ],
-        "name": "spearman",
+        "name": "tsfilter.rank_correlation.spearman",
         "sources": [
-            "spearman.pyx"
+            "tsfilter/rank_correlation/spearman.pyx"
         ]
     },
-    "module_name": "spearman"
+    "module_name": "tsfilter.rank_correlation.spearman"
 }
 END: Cython Metadata */
 
@@ -1187,8 +1185,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__spearman
-#define __PYX_HAVE_API__spearman
+#define __PYX_HAVE__tsfilter__rank_correlation__spearman
+#define __PYX_HAVE_API__tsfilter__rank_correlation__spearman
 /* Early includes */
 #include "pythread.h"
 #include <string.h>
@@ -1480,7 +1478,7 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "spearman.pyx",
+  "tsfilter/rank_correlation/spearman.pyx",
   "<stringsource>",
 };
 /* #### Code section: utility_code_proto_before_types ### */
@@ -2790,7 +2788,7 @@ static PyObject *__pyx_memoryviewslice__get_base(struct __pyx_memoryviewslice_ob
 
 /* Module declarations from "cython" */
 
-/* Module declarations from "spearman" */
+/* Module declarations from "tsfilter.rank_correlation.spearman" */
 static PyObject *__pyx_collections_abc_Sequence = 0;
 static PyObject *generic = 0;
 static PyObject *strided = 0;
@@ -2799,10 +2797,10 @@ static PyObject *contiguous = 0;
 static PyObject *indirect_contiguous = 0;
 static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
-static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice, __Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
-static void __pyx_f_8spearman_spearman_cdef(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
-static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice, __Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
-static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice, __Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_cdef(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_covariance_cdef(__Pyx_memviewslice, __Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_standard_deviation_cdef(__Pyx_memviewslice, int, int, __Pyx_memviewslice); /*proto*/
 static int __pyx_array_allocate_buffer(struct __pyx_array_obj *); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -2841,11 +2839,11 @@ static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *, 
 static __Pyx_TypeInfo __Pyx_TypeInfo_long = { "long", NULL, sizeof(long), { 0 }, 0, __PYX_IS_UNSIGNED(long) ? 'U' : 'I', __PYX_IS_UNSIGNED(long), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_double = { "double", NULL, sizeof(double), { 0 }, 0, 'R', 0, 0 };
 /* #### Code section: before_global_var ### */
-#define __Pyx_MODULE_NAME "spearman"
-extern int __pyx_module_is_main_spearman;
-int __pyx_module_is_main_spearman = 0;
+#define __Pyx_MODULE_NAME "tsfilter.rank_correlation.spearman"
+extern int __pyx_module_is_main_tsfilter__rank_correlation__spearman;
+int __pyx_module_is_main_tsfilter__rank_correlation__spearman = 0;
 
-/* Implementation of "spearman" */
+/* Implementation of "tsfilter.rank_correlation.spearman" */
 /* #### Code section: global_var ### */
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_ValueError;
@@ -2948,7 +2946,6 @@ static const char __pyx_k_collections[] = "collections";
 static const char __pyx_k_initializing[] = "_initializing";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
-static const char __pyx_k_spearman_pyx[] = "spearman.pyx";
 static const char __pyx_k_stringsource[] = "<stringsource>";
 static const char __pyx_k_version_info[] = "version_info";
 static const char __pyx_k_class_getitem[] = "__class_getitem__";
@@ -2995,7 +2992,9 @@ static const char __pyx_k_Out_of_bounds_on_buffer_access_a[] = "Out of bounds on
 static const char __pyx_k_Unable_to_convert_item_to_object[] = "Unable to convert item to object";
 static const char __pyx_k_got_differing_extents_in_dimensi[] = "got differing extents in dimension ";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
+static const char __pyx_k_tsfilter_rank_correlation_spearm[] = "tsfilter/rank_correlation/spearman.pyx";
 static const char __pyx_k_unable_to_allocate_shape_and_str[] = "unable to allocate shape and strides.";
+static const char __pyx_k_tsfilter_rank_correlation_spearm_2[] = "tsfilter.rank_correlation.spearman";
 /* #### Code section: decls ### */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
@@ -3038,9 +3037,9 @@ static void __pyx_memoryviewslice___pyx_pf_15View_dot_MemoryView_16_memoryviewsl
 static PyObject *__pyx_pf___pyx_memoryviewslice___reduce_cython__(CYTHON_UNUSED struct __pyx_memoryviewslice_obj *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf___pyx_memoryviewslice_2__setstate_cython__(CYTHON_UNUSED struct __pyx_memoryviewslice_obj *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_15View_dot_MemoryView___pyx_unpickle_Enum(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
-static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2); /* proto */
-static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2, PyObject *__pyx_v_sd1, PyObject *__pyx_v_sd2); /* proto */
-static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1); /* proto */
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2); /* proto */
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2, PyObject *__pyx_v_sd1, PyObject *__pyx_v_sd2); /* proto */
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1); /* proto */
 static PyObject *__pyx_tp_new_array(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_Enum(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_memoryview(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
@@ -3206,7 +3205,6 @@ typedef struct {
   PyObject *__pyx_n_s_size;
   PyObject *__pyx_n_s_spearman;
   PyObject *__pyx_n_s_spearman_distinct_ranks;
-  PyObject *__pyx_kp_s_spearman_pyx;
   PyObject *__pyx_n_s_spec;
   PyObject *__pyx_n_s_standard_deviation;
   PyObject *__pyx_n_s_start;
@@ -3219,6 +3217,8 @@ typedef struct {
   PyObject *__pyx_n_s_struct;
   PyObject *__pyx_n_s_sys;
   PyObject *__pyx_n_s_test;
+  PyObject *__pyx_kp_s_tsfilter_rank_correlation_spearm;
+  PyObject *__pyx_n_s_tsfilter_rank_correlation_spearm_2;
   PyObject *__pyx_kp_s_unable_to_allocate_array_data;
   PyObject *__pyx_kp_s_unable_to_allocate_shape_and_str;
   PyObject *__pyx_n_s_unpack;
@@ -3422,7 +3422,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_size);
   Py_CLEAR(clear_module_state->__pyx_n_s_spearman);
   Py_CLEAR(clear_module_state->__pyx_n_s_spearman_distinct_ranks);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_spearman_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_n_s_standard_deviation);
   Py_CLEAR(clear_module_state->__pyx_n_s_start);
@@ -3435,6 +3434,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_struct);
   Py_CLEAR(clear_module_state->__pyx_n_s_sys);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
+  Py_CLEAR(clear_module_state->__pyx_kp_s_tsfilter_rank_correlation_spearm);
+  Py_CLEAR(clear_module_state->__pyx_n_s_tsfilter_rank_correlation_spearm_2);
   Py_CLEAR(clear_module_state->__pyx_kp_s_unable_to_allocate_array_data);
   Py_CLEAR(clear_module_state->__pyx_kp_s_unable_to_allocate_shape_and_str);
   Py_CLEAR(clear_module_state->__pyx_n_s_unpack);
@@ -3616,7 +3617,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_size);
   Py_VISIT(traverse_module_state->__pyx_n_s_spearman);
   Py_VISIT(traverse_module_state->__pyx_n_s_spearman_distinct_ranks);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_spearman_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_n_s_standard_deviation);
   Py_VISIT(traverse_module_state->__pyx_n_s_start);
@@ -3629,6 +3629,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_struct);
   Py_VISIT(traverse_module_state->__pyx_n_s_sys);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
+  Py_VISIT(traverse_module_state->__pyx_kp_s_tsfilter_rank_correlation_spearm);
+  Py_VISIT(traverse_module_state->__pyx_n_s_tsfilter_rank_correlation_spearm_2);
   Py_VISIT(traverse_module_state->__pyx_kp_s_unable_to_allocate_array_data);
   Py_VISIT(traverse_module_state->__pyx_kp_s_unable_to_allocate_shape_and_str);
   Py_VISIT(traverse_module_state->__pyx_n_s_unpack);
@@ -3826,7 +3828,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_size __pyx_mstate_global->__pyx_n_s_size
 #define __pyx_n_s_spearman __pyx_mstate_global->__pyx_n_s_spearman
 #define __pyx_n_s_spearman_distinct_ranks __pyx_mstate_global->__pyx_n_s_spearman_distinct_ranks
-#define __pyx_kp_s_spearman_pyx __pyx_mstate_global->__pyx_kp_s_spearman_pyx
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_n_s_standard_deviation __pyx_mstate_global->__pyx_n_s_standard_deviation
 #define __pyx_n_s_start __pyx_mstate_global->__pyx_n_s_start
@@ -3839,6 +3840,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_struct __pyx_mstate_global->__pyx_n_s_struct
 #define __pyx_n_s_sys __pyx_mstate_global->__pyx_n_s_sys
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
+#define __pyx_kp_s_tsfilter_rank_correlation_spearm __pyx_mstate_global->__pyx_kp_s_tsfilter_rank_correlation_spearm
+#define __pyx_n_s_tsfilter_rank_correlation_spearm_2 __pyx_mstate_global->__pyx_n_s_tsfilter_rank_correlation_spearm_2
 #define __pyx_kp_s_unable_to_allocate_array_data __pyx_mstate_global->__pyx_kp_s_unable_to_allocate_array_data
 #define __pyx_kp_s_unable_to_allocate_shape_and_str __pyx_mstate_global->__pyx_kp_s_unable_to_allocate_shape_and_str
 #define __pyx_n_s_unpack __pyx_mstate_global->__pyx_n_s_unpack
@@ -17502,7 +17505,7 @@ static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *__
   return __pyx_r;
 }
 
-/* "spearman.pyx":10
+/* "tsfilter/rank_correlation/spearman.pyx":10
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void spearman_distinct_ranks_cdef(long[:, :] ranks1, long[:, :] ranks2, int n, int nb_classes,             # <<<<<<<<<<<<<<
@@ -17510,7 +17513,7 @@ static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *__
  *     cdef int i, j
  */
 
-static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __pyx_v_ranks1, __Pyx_memviewslice __pyx_v_ranks2, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_ocorr) {
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __pyx_v_ranks1, __Pyx_memviewslice __pyx_v_ranks2, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_ocorr) {
   int __pyx_v_i;
   int __pyx_v_j;
   double __pyx_v_s;
@@ -17533,7 +17536,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
   PyGILState_STATE __pyx_gilstate_save;
   #endif
 
-  /* "spearman.pyx":13
+  /* "tsfilter/rank_correlation/spearman.pyx":13
  *                                        double[:] ocorr) noexcept nogil:
  *     cdef int i, j
  *     for i in xrange(nb_classes):             # <<<<<<<<<<<<<<
@@ -17545,7 +17548,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "spearman.pyx":14
+    /* "tsfilter/rank_correlation/spearman.pyx":14
  *     cdef int i, j
  *     for i in xrange(nb_classes):
  *         s = 0.0             # <<<<<<<<<<<<<<
@@ -17554,7 +17557,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
  */
     __pyx_v_s = 0.0;
 
-    /* "spearman.pyx":15
+    /* "tsfilter/rank_correlation/spearman.pyx":15
  *     for i in xrange(nb_classes):
  *         s = 0.0
  *         for j in xrange(n):             # <<<<<<<<<<<<<<
@@ -17566,7 +17569,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j = __pyx_t_6;
 
-      /* "spearman.pyx":16
+      /* "tsfilter/rank_correlation/spearman.pyx":16
  *         s = 0.0
  *         for j in xrange(n):
  *             s += (ranks1[j, i] - ranks2[j, i])**2             # <<<<<<<<<<<<<<
@@ -17580,7 +17583,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
       __pyx_v_s = (__pyx_v_s + __Pyx_pow_long(((*((long *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_ranks1.data + __pyx_t_7 * __pyx_v_ranks1.strides[0]) ) + __pyx_t_8 * __pyx_v_ranks1.strides[1]) ))) - (*((long *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_ranks2.data + __pyx_t_9 * __pyx_v_ranks2.strides[0]) ) + __pyx_t_10 * __pyx_v_ranks2.strides[1]) )))), 2));
     }
 
-    /* "spearman.pyx":17
+    /* "tsfilter/rank_correlation/spearman.pyx":17
  *         for j in xrange(n):
  *             s += (ranks1[j, i] - ranks2[j, i])**2
  *         ocorr[i] = 1 - ((6 * s) / (n * (n**2 - 1)))             # <<<<<<<<<<<<<<
@@ -17603,7 +17606,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
     *((double *) ( /* dim=0 */ (__pyx_v_ocorr.data + __pyx_t_10 * __pyx_v_ocorr.strides[0]) )) = (1.0 - (__pyx_t_11 / ((double)__pyx_t_12)));
   }
 
-  /* "spearman.pyx":10
+  /* "tsfilter/rank_correlation/spearman.pyx":10
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void spearman_distinct_ranks_cdef(long[:, :] ranks1, long[:, :] ranks2, int n, int nb_classes,             # <<<<<<<<<<<<<<
@@ -17617,14 +17620,14 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
   #ifdef WITH_THREAD
   __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
   #endif
-  __Pyx_WriteUnraisable("spearman.spearman_distinct_ranks_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("tsfilter.rank_correlation.spearman.spearman_distinct_ranks_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   #ifdef WITH_THREAD
   __Pyx_PyGILState_Release(__pyx_gilstate_save);
   #endif
   __pyx_L0:;
 }
 
-/* "spearman.pyx":21
+/* "tsfilter/rank_correlation/spearman.pyx":21
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void spearman_cdef(long[:, :] ranks1, long[:, :] ranks2, double[:] sd1, double[:] sd2, double[:] cov,             # <<<<<<<<<<<<<<
@@ -17632,7 +17635,7 @@ static void __pyx_f_8spearman_spearman_distinct_ranks_cdef(__Pyx_memviewslice __
  *     cdef int i
  */
 
-static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __pyx_v_ranks1, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_ranks2, __Pyx_memviewslice __pyx_v_sd1, __Pyx_memviewslice __pyx_v_sd2, __Pyx_memviewslice __pyx_v_cov, __Pyx_memviewslice __pyx_v_ocorr) {
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __pyx_v_ranks1, CYTHON_UNUSED __Pyx_memviewslice __pyx_v_ranks2, __Pyx_memviewslice __pyx_v_sd1, __Pyx_memviewslice __pyx_v_sd2, __Pyx_memviewslice __pyx_v_cov, __Pyx_memviewslice __pyx_v_ocorr) {
   int __pyx_v_i;
   Py_ssize_t __pyx_t_1;
   Py_ssize_t __pyx_t_2;
@@ -17648,7 +17651,7 @@ static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __p
   PyGILState_STATE __pyx_gilstate_save;
   #endif
 
-  /* "spearman.pyx":24
+  /* "tsfilter/rank_correlation/spearman.pyx":24
  * double[:] ocorr) noexcept nogil:
  *     cdef int i
  *     for i in xrange(len(sd1)):             # <<<<<<<<<<<<<<
@@ -17660,7 +17663,7 @@ static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __p
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "spearman.pyx":25
+    /* "tsfilter/rank_correlation/spearman.pyx":25
  *     cdef int i
  *     for i in xrange(len(sd1)):
  *         ocorr[i] = cov[i] / (sd1[i] * sd2[i])             # <<<<<<<<<<<<<<
@@ -17686,7 +17689,7 @@ static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __p
     *((double *) ( /* dim=0 */ (__pyx_v_ocorr.data + __pyx_t_6 * __pyx_v_ocorr.strides[0]) )) = (__pyx_t_5 / __pyx_t_7);
   }
 
-  /* "spearman.pyx":21
+  /* "tsfilter/rank_correlation/spearman.pyx":21
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void spearman_cdef(long[:, :] ranks1, long[:, :] ranks2, double[:] sd1, double[:] sd2, double[:] cov,             # <<<<<<<<<<<<<<
@@ -17700,14 +17703,14 @@ static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __p
   #ifdef WITH_THREAD
   __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
   #endif
-  __Pyx_WriteUnraisable("spearman.spearman_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("tsfilter.rank_correlation.spearman.spearman_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   #ifdef WITH_THREAD
   __Pyx_PyGILState_Release(__pyx_gilstate_save);
   #endif
   __pyx_L0:;
 }
 
-/* "spearman.pyx":29
+/* "tsfilter/rank_correlation/spearman.pyx":29
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void covariance_cdef(long[:, :] ranks1, long[:, :] ranks2, int n, int nb_classes, double[:] cov) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -17715,7 +17718,7 @@ static void __pyx_f_8spearman_spearman_cdef(CYTHON_UNUSED __Pyx_memviewslice __p
  *     for i in xrange(nb_classes):
  */
 
-static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1, __Pyx_memviewslice __pyx_v_ranks2, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_cov) {
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1, __Pyx_memviewslice __pyx_v_ranks2, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_cov) {
   int __pyx_v_i;
   int __pyx_v_j1;
   int __pyx_v_j2;
@@ -17745,7 +17748,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
   PyGILState_STATE __pyx_gilstate_save;
   #endif
 
-  /* "spearman.pyx":31
+  /* "tsfilter/rank_correlation/spearman.pyx":31
  * cdef void covariance_cdef(long[:, :] ranks1, long[:, :] ranks2, int n, int nb_classes, double[:] cov) noexcept nogil:
  *     cdef int i, j1, j2
  *     for i in xrange(nb_classes):             # <<<<<<<<<<<<<<
@@ -17757,7 +17760,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "spearman.pyx":32
+    /* "tsfilter/rank_correlation/spearman.pyx":32
  *     cdef int i, j1, j2
  *     for i in xrange(nb_classes):
  *         cov_i = 0.0             # <<<<<<<<<<<<<<
@@ -17766,7 +17769,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
  */
     __pyx_v_cov_i = 0.0;
 
-    /* "spearman.pyx":33
+    /* "tsfilter/rank_correlation/spearman.pyx":33
  *     for i in xrange(nb_classes):
  *         cov_i = 0.0
  *         for j1 in xrange(n):             # <<<<<<<<<<<<<<
@@ -17778,7 +17781,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j1 = __pyx_t_6;
 
-      /* "spearman.pyx":34
+      /* "tsfilter/rank_correlation/spearman.pyx":34
  *         cov_i = 0.0
  *         for j1 in xrange(n):
  *             for j2 in xrange(j1, n):             # <<<<<<<<<<<<<<
@@ -17790,7 +17793,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
       for (__pyx_t_9 = __pyx_v_j1; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
         __pyx_v_j2 = __pyx_t_9;
 
-        /* "spearman.pyx":35
+        /* "tsfilter/rank_correlation/spearman.pyx":35
  *         for j1 in xrange(n):
  *             for j2 in xrange(j1, n):
  *                 cov_i += (ranks1[j1, i] - ranks1[j2, i]) * (ranks2[j1, i] - ranks2[j2, i])             # <<<<<<<<<<<<<<
@@ -17809,7 +17812,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
       }
     }
 
-    /* "spearman.pyx":36
+    /* "tsfilter/rank_correlation/spearman.pyx":36
  *             for j2 in xrange(j1, n):
  *                 cov_i += (ranks1[j1, i] - ranks1[j2, i]) * (ranks2[j1, i] - ranks2[j2, i])
  *         cov[i] = cov_i / (n**2)             # <<<<<<<<<<<<<<
@@ -17831,7 +17834,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
     *((double *) ( /* dim=0 */ (__pyx_v_cov.data + __pyx_t_17 * __pyx_v_cov.strides[0]) )) = (__pyx_v_cov_i / ((double)__pyx_t_18));
   }
 
-  /* "spearman.pyx":29
+  /* "tsfilter/rank_correlation/spearman.pyx":29
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void covariance_cdef(long[:, :] ranks1, long[:, :] ranks2, int n, int nb_classes, double[:] cov) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -17845,14 +17848,14 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
   #ifdef WITH_THREAD
   __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
   #endif
-  __Pyx_WriteUnraisable("spearman.covariance_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("tsfilter.rank_correlation.spearman.covariance_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   #ifdef WITH_THREAD
   __Pyx_PyGILState_Release(__pyx_gilstate_save);
   #endif
   __pyx_L0:;
 }
 
-/* "spearman.pyx":40
+/* "tsfilter/rank_correlation/spearman.pyx":40
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void standard_deviation_cdef(long[:, :] ranks1, int n, int nb_classes, double[:] sd) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -17860,7 +17863,7 @@ static void __pyx_f_8spearman_covariance_cdef(__Pyx_memviewslice __pyx_v_ranks1,
  *     for i in xrange(nb_classes):
  */
 
-static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v_ranks1, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_sd) {
+static void __pyx_f_8tsfilter_16rank_correlation_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v_ranks1, int __pyx_v_n, int __pyx_v_nb_classes, __Pyx_memviewslice __pyx_v_sd) {
   int __pyx_v_i;
   int __pyx_v_j1;
   double __pyx_v_mean;
@@ -17880,7 +17883,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
   PyGILState_STATE __pyx_gilstate_save;
   #endif
 
-  /* "spearman.pyx":42
+  /* "tsfilter/rank_correlation/spearman.pyx":42
  * cdef void standard_deviation_cdef(long[:, :] ranks1, int n, int nb_classes, double[:] sd) noexcept nogil:
  *     cdef int i, j1
  *     for i in xrange(nb_classes):             # <<<<<<<<<<<<<<
@@ -17892,7 +17895,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "spearman.pyx":43
+    /* "tsfilter/rank_correlation/spearman.pyx":43
  *     cdef int i, j1
  *     for i in xrange(nb_classes):
  *         mean = 0.0             # <<<<<<<<<<<<<<
@@ -17901,7 +17904,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
  */
     __pyx_v_mean = 0.0;
 
-    /* "spearman.pyx":44
+    /* "tsfilter/rank_correlation/spearman.pyx":44
  *     for i in xrange(nb_classes):
  *         mean = 0.0
  *         sd_i = 0.0             # <<<<<<<<<<<<<<
@@ -17910,7 +17913,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
  */
     __pyx_v_sd_i = 0.0;
 
-    /* "spearman.pyx":47
+    /* "tsfilter/rank_correlation/spearman.pyx":47
  * 
  *         # compute mean
  *         for j1 in xrange(n):             # <<<<<<<<<<<<<<
@@ -17922,7 +17925,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j1 = __pyx_t_6;
 
-      /* "spearman.pyx":48
+      /* "tsfilter/rank_correlation/spearman.pyx":48
  *         # compute mean
  *         for j1 in xrange(n):
  *             mean += ranks1[j1, i]             # <<<<<<<<<<<<<<
@@ -17934,7 +17937,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
       __pyx_v_mean = (__pyx_v_mean + (*((long *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_ranks1.data + __pyx_t_7 * __pyx_v_ranks1.strides[0]) ) + __pyx_t_8 * __pyx_v_ranks1.strides[1]) ))));
     }
 
-    /* "spearman.pyx":49
+    /* "tsfilter/rank_correlation/spearman.pyx":49
  *         for j1 in xrange(n):
  *             mean += ranks1[j1, i]
  *         mean = mean/ n             # <<<<<<<<<<<<<<
@@ -17953,7 +17956,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
     }
     __pyx_v_mean = (__pyx_v_mean / ((double)__pyx_v_n));
 
-    /* "spearman.pyx":52
+    /* "tsfilter/rank_correlation/spearman.pyx":52
  * 
  *         #compute standard deviation
  *         for j1 in xrange(n):             # <<<<<<<<<<<<<<
@@ -17965,7 +17968,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_j1 = __pyx_t_6;
 
-      /* "spearman.pyx":53
+      /* "tsfilter/rank_correlation/spearman.pyx":53
  *         #compute standard deviation
  *         for j1 in xrange(n):
  *             sd_i += (ranks1[j1, i] - mean) ** 2             # <<<<<<<<<<<<<<
@@ -17977,7 +17980,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
       __pyx_v_sd_i = (__pyx_v_sd_i + pow(((*((long *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_ranks1.data + __pyx_t_8 * __pyx_v_ranks1.strides[0]) ) + __pyx_t_7 * __pyx_v_ranks1.strides[1]) ))) - __pyx_v_mean), 2.0));
     }
 
-    /* "spearman.pyx":54
+    /* "tsfilter/rank_correlation/spearman.pyx":54
  *         for j1 in xrange(n):
  *             sd_i += (ranks1[j1, i] - mean) ** 2
  *         sd[i] = (sd_i / n) ** 0.5             # <<<<<<<<<<<<<<
@@ -17998,7 +18001,7 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
     *((double *) ( /* dim=0 */ (__pyx_v_sd.data + __pyx_t_7 * __pyx_v_sd.strides[0]) )) = pow((__pyx_v_sd_i / ((double)__pyx_v_n)), 0.5);
   }
 
-  /* "spearman.pyx":40
+  /* "tsfilter/rank_correlation/spearman.pyx":40
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void standard_deviation_cdef(long[:, :] ranks1, int n, int nb_classes, double[:] sd) noexcept nogil:             # <<<<<<<<<<<<<<
@@ -18012,14 +18015,14 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
   #ifdef WITH_THREAD
   __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
   #endif
-  __Pyx_WriteUnraisable("spearman.standard_deviation_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __Pyx_WriteUnraisable("tsfilter.rank_correlation.spearman.standard_deviation_cdef", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
   #ifdef WITH_THREAD
   __Pyx_PyGILState_Release(__pyx_gilstate_save);
   #endif
   __pyx_L0:;
 }
 
-/* "spearman.pyx":58
+/* "tsfilter/rank_correlation/spearman.pyx":58
  * 
  * #- ENTRY POINTS ---------------------------------------------------------------
  * def spearman_distinct_ranks(ranks1, ranks2):             # <<<<<<<<<<<<<<
@@ -18028,15 +18031,15 @@ static void __pyx_f_8spearman_standard_deviation_cdef(__Pyx_memviewslice __pyx_v
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8spearman_1spearman_distinct_ranks(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_1spearman_distinct_ranks(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_8spearman_1spearman_distinct_ranks = {"spearman_distinct_ranks", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8spearman_1spearman_distinct_ranks, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8spearman_1spearman_distinct_ranks(PyObject *__pyx_self, 
+static PyMethodDef __pyx_mdef_8tsfilter_16rank_correlation_8spearman_1spearman_distinct_ranks = {"spearman_distinct_ranks", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tsfilter_16rank_correlation_8spearman_1spearman_distinct_ranks, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_1spearman_distinct_ranks(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -18121,11 +18124,11 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("spearman.spearman_distinct_ranks", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.spearman_distinct_ranks", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8spearman_spearman_distinct_ranks(__pyx_self, __pyx_v_ranks1, __pyx_v_ranks2);
+  __pyx_r = __pyx_pf_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks(__pyx_self, __pyx_v_ranks1, __pyx_v_ranks2);
 
   /* function exit code */
   {
@@ -18138,7 +18141,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2) {
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2) {
   PyObject *__pyx_v_nb_classes = NULL;
   PyObject *__pyx_v_n = NULL;
   PyObject *__pyx_v_corr = NULL;
@@ -18162,7 +18165,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("spearman_distinct_ranks", 1);
 
-  /* "spearman.pyx":59
+  /* "tsfilter/rank_correlation/spearman.pyx":59
  * #- ENTRY POINTS ---------------------------------------------------------------
  * def spearman_distinct_ranks(ranks1, ranks2):
  *     nb_classes = np.shape(ranks1)[1]             # <<<<<<<<<<<<<<
@@ -18202,7 +18205,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __pyx_v_nb_classes = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "spearman.pyx":60
+  /* "tsfilter/rank_correlation/spearman.pyx":60
  * def spearman_distinct_ranks(ranks1, ranks2):
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]             # <<<<<<<<<<<<<<
@@ -18242,7 +18245,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __pyx_v_n = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "spearman.pyx":61
+  /* "tsfilter/rank_correlation/spearman.pyx":61
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:             # <<<<<<<<<<<<<<
@@ -18285,7 +18288,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_5)) {
 
-    /* "spearman.pyx":62
+    /* "tsfilter/rank_correlation/spearman.pyx":62
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")             # <<<<<<<<<<<<<<
@@ -18384,7 +18387,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __PYX_ERR(0, 62, __pyx_L1_error)
 
-    /* "spearman.pyx":61
+    /* "tsfilter/rank_correlation/spearman.pyx":61
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:             # <<<<<<<<<<<<<<
@@ -18393,7 +18396,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
  */
   }
 
-  /* "spearman.pyx":63
+  /* "tsfilter/rank_correlation/spearman.pyx":63
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:             # <<<<<<<<<<<<<<
@@ -18436,7 +18439,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_5)) {
 
-    /* "spearman.pyx":64
+    /* "tsfilter/rank_correlation/spearman.pyx":64
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:
  *         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")             # <<<<<<<<<<<<<<
@@ -18535,7 +18538,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __PYX_ERR(0, 64, __pyx_L1_error)
 
-    /* "spearman.pyx":63
+    /* "tsfilter/rank_correlation/spearman.pyx":63
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:             # <<<<<<<<<<<<<<
@@ -18544,7 +18547,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
  */
   }
 
-  /* "spearman.pyx":65
+  /* "tsfilter/rank_correlation/spearman.pyx":65
  *     if np.shape(ranks2)[1] != nb_classes:
  *         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     corr = np.zeros(np.shape(ranks1)[1], dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -18608,7 +18611,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __pyx_v_corr = __pyx_t_9;
   __pyx_t_9 = 0;
 
-  /* "spearman.pyx":66
+  /* "tsfilter/rank_correlation/spearman.pyx":66
  *         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     corr = np.zeros(np.shape(ranks1)[1], dtype=np.float64)
  *     spearman_distinct_ranks_cdef(ranks1, ranks2, n, nb_classes, corr)             # <<<<<<<<<<<<<<
@@ -18620,7 +18623,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_n); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 66, __pyx_L1_error)
   __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_v_nb_classes); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 66, __pyx_L1_error)
   __pyx_t_13 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_corr, PyBUF_WRITABLE); if (unlikely(!__pyx_t_13.memview)) __PYX_ERR(0, 66, __pyx_L1_error)
-  __pyx_f_8spearman_spearman_distinct_ranks_cdef(__pyx_t_10, __pyx_t_11, __pyx_t_4, __pyx_t_12, __pyx_t_13);
+  __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_distinct_ranks_cdef(__pyx_t_10, __pyx_t_11, __pyx_t_4, __pyx_t_12, __pyx_t_13);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_10, 1);
   __pyx_t_10.memview = NULL; __pyx_t_10.data = NULL;
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_11, 1);
@@ -18628,7 +18631,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_13, 1);
   __pyx_t_13.memview = NULL; __pyx_t_13.data = NULL;
 
-  /* "spearman.pyx":67
+  /* "tsfilter/rank_correlation/spearman.pyx":67
  *     corr = np.zeros(np.shape(ranks1)[1], dtype=np.float64)
  *     spearman_distinct_ranks_cdef(ranks1, ranks2, n, nb_classes, corr)
  *     return corr             # <<<<<<<<<<<<<<
@@ -18640,7 +18643,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __pyx_r = __pyx_v_corr;
   goto __pyx_L0;
 
-  /* "spearman.pyx":58
+  /* "tsfilter/rank_correlation/spearman.pyx":58
  * 
  * #- ENTRY POINTS ---------------------------------------------------------------
  * def spearman_distinct_ranks(ranks1, ranks2):             # <<<<<<<<<<<<<<
@@ -18658,7 +18661,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_10, 1);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_11, 1);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_13, 1);
-  __Pyx_AddTraceback("spearman.spearman_distinct_ranks", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.spearman_distinct_ranks", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_nb_classes);
@@ -18669,7 +18672,7 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
   return __pyx_r;
 }
 
-/* "spearman.pyx":70
+/* "tsfilter/rank_correlation/spearman.pyx":70
  * 
  * 
  * def spearman(ranks1, ranks2, sd1, sd2):             # <<<<<<<<<<<<<<
@@ -18678,15 +18681,15 @@ static PyObject *__pyx_pf_8spearman_spearman_distinct_ranks(CYTHON_UNUSED PyObje
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8spearman_3spearman(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_3spearman(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_8spearman_3spearman = {"spearman", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8spearman_3spearman, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8spearman_3spearman(PyObject *__pyx_self, 
+static PyMethodDef __pyx_mdef_8tsfilter_16rank_correlation_8spearman_3spearman = {"spearman", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tsfilter_16rank_correlation_8spearman_3spearman, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_3spearman(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -18801,11 +18804,11 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("spearman.spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8spearman_2spearman(__pyx_self, __pyx_v_ranks1, __pyx_v_ranks2, __pyx_v_sd1, __pyx_v_sd2);
+  __pyx_r = __pyx_pf_8tsfilter_16rank_correlation_8spearman_2spearman(__pyx_self, __pyx_v_ranks1, __pyx_v_ranks2, __pyx_v_sd1, __pyx_v_sd2);
 
   /* function exit code */
   {
@@ -18818,7 +18821,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2, PyObject *__pyx_v_sd1, PyObject *__pyx_v_sd2) {
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1, PyObject *__pyx_v_ranks2, PyObject *__pyx_v_sd1, PyObject *__pyx_v_sd2) {
   PyObject *__pyx_v_nb_classes = NULL;
   PyObject *__pyx_v_n = NULL;
   PyObject *__pyx_v_cov = NULL;
@@ -18846,7 +18849,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("spearman", 1);
 
-  /* "spearman.pyx":71
+  /* "tsfilter/rank_correlation/spearman.pyx":71
  * 
  * def spearman(ranks1, ranks2, sd1, sd2):
  *     nb_classes = np.shape(ranks1)[1]             # <<<<<<<<<<<<<<
@@ -18886,7 +18889,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_v_nb_classes = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "spearman.pyx":72
+  /* "tsfilter/rank_correlation/spearman.pyx":72
  * def spearman(ranks1, ranks2, sd1, sd2):
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]             # <<<<<<<<<<<<<<
@@ -18926,7 +18929,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_v_n = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "spearman.pyx":73
+  /* "tsfilter/rank_correlation/spearman.pyx":73
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:             # <<<<<<<<<<<<<<
@@ -18969,7 +18972,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_5)) {
 
-    /* "spearman.pyx":74
+    /* "tsfilter/rank_correlation/spearman.pyx":74
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")             # <<<<<<<<<<<<<<
@@ -19068,7 +19071,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __PYX_ERR(0, 74, __pyx_L1_error)
 
-    /* "spearman.pyx":73
+    /* "tsfilter/rank_correlation/spearman.pyx":73
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  *     if np.shape(ranks2)[0] != n:             # <<<<<<<<<<<<<<
@@ -19077,7 +19080,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
  */
   }
 
-  /* "spearman.pyx":75
+  /* "tsfilter/rank_correlation/spearman.pyx":75
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:             # <<<<<<<<<<<<<<
@@ -19120,7 +19123,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_5)) {
 
-    /* "spearman.pyx":76
+    /* "tsfilter/rank_correlation/spearman.pyx":76
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:
  *         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")             # <<<<<<<<<<<<<<
@@ -19219,7 +19222,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __PYX_ERR(0, 76, __pyx_L1_error)
 
-    /* "spearman.pyx":75
+    /* "tsfilter/rank_correlation/spearman.pyx":75
  *     if np.shape(ranks2)[0] != n:
  *         raise ValueError(f"Number of instances do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  *     if np.shape(ranks2)[1] != nb_classes:             # <<<<<<<<<<<<<<
@@ -19228,7 +19231,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
  */
   }
 
-  /* "spearman.pyx":78
+  /* "tsfilter/rank_correlation/spearman.pyx":78
  *         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
  * 
  *     cov = np.zeros(nb_classes, dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -19262,7 +19265,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_v_cov = __pyx_t_9;
   __pyx_t_9 = 0;
 
-  /* "spearman.pyx":79
+  /* "tsfilter/rank_correlation/spearman.pyx":79
  * 
  *     cov = np.zeros(nb_classes, dtype=np.float64)
  *     covariance_cdef(ranks1, ranks2, n, nb_classes, cov)             # <<<<<<<<<<<<<<
@@ -19274,7 +19277,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_n); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L1_error)
   __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_v_nb_classes); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L1_error)
   __pyx_t_13 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_cov, PyBUF_WRITABLE); if (unlikely(!__pyx_t_13.memview)) __PYX_ERR(0, 79, __pyx_L1_error)
-  __pyx_f_8spearman_covariance_cdef(__pyx_t_10, __pyx_t_11, __pyx_t_4, __pyx_t_12, __pyx_t_13);
+  __pyx_f_8tsfilter_16rank_correlation_8spearman_covariance_cdef(__pyx_t_10, __pyx_t_11, __pyx_t_4, __pyx_t_12, __pyx_t_13);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_10, 1);
   __pyx_t_10.memview = NULL; __pyx_t_10.data = NULL;
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_11, 1);
@@ -19282,7 +19285,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_13, 1);
   __pyx_t_13.memview = NULL; __pyx_t_13.data = NULL;
 
-  /* "spearman.pyx":81
+  /* "tsfilter/rank_correlation/spearman.pyx":81
  *     covariance_cdef(ranks1, ranks2, n, nb_classes, cov)
  * 
  *     corr = np.zeros(nb_classes, dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -19316,7 +19319,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_v_corr = __pyx_t_8;
   __pyx_t_8 = 0;
 
-  /* "spearman.pyx":82
+  /* "tsfilter/rank_correlation/spearman.pyx":82
  * 
  *     corr = np.zeros(nb_classes, dtype=np.float64)
  *     spearman_cdef(ranks1, ranks2, sd1, sd2, cov, corr)             # <<<<<<<<<<<<<<
@@ -19329,7 +19332,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_t_14 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_sd2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_14.memview)) __PYX_ERR(0, 82, __pyx_L1_error)
   __pyx_t_15 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_cov, PyBUF_WRITABLE); if (unlikely(!__pyx_t_15.memview)) __PYX_ERR(0, 82, __pyx_L1_error)
   __pyx_t_16 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_corr, PyBUF_WRITABLE); if (unlikely(!__pyx_t_16.memview)) __PYX_ERR(0, 82, __pyx_L1_error)
-  __pyx_f_8spearman_spearman_cdef(__pyx_t_11, __pyx_t_10, __pyx_t_13, __pyx_t_14, __pyx_t_15, __pyx_t_16);
+  __pyx_f_8tsfilter_16rank_correlation_8spearman_spearman_cdef(__pyx_t_11, __pyx_t_10, __pyx_t_13, __pyx_t_14, __pyx_t_15, __pyx_t_16);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_11, 1);
   __pyx_t_11.memview = NULL; __pyx_t_11.data = NULL;
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_10, 1);
@@ -19343,7 +19346,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_16, 1);
   __pyx_t_16.memview = NULL; __pyx_t_16.data = NULL;
 
-  /* "spearman.pyx":83
+  /* "tsfilter/rank_correlation/spearman.pyx":83
  *     corr = np.zeros(nb_classes, dtype=np.float64)
  *     spearman_cdef(ranks1, ranks2, sd1, sd2, cov, corr)
  *     return corr             # <<<<<<<<<<<<<<
@@ -19355,7 +19358,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_r = __pyx_v_corr;
   goto __pyx_L0;
 
-  /* "spearman.pyx":70
+  /* "tsfilter/rank_correlation/spearman.pyx":70
  * 
  * 
  * def spearman(ranks1, ranks2, sd1, sd2):             # <<<<<<<<<<<<<<
@@ -19376,7 +19379,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_14, 1);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_15, 1);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_16, 1);
-  __Pyx_AddTraceback("spearman.spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_nb_classes);
@@ -19388,7 +19391,7 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
   return __pyx_r;
 }
 
-/* "spearman.pyx":85
+/* "tsfilter/rank_correlation/spearman.pyx":85
  *     return corr
  * 
  * def standard_deviation(ranks1):             # <<<<<<<<<<<<<<
@@ -19397,15 +19400,15 @@ static PyObject *__pyx_pf_8spearman_2spearman(CYTHON_UNUSED PyObject *__pyx_self
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8spearman_5standard_deviation(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_5standard_deviation(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_8spearman_5standard_deviation = {"standard_deviation", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8spearman_5standard_deviation, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8spearman_5standard_deviation(PyObject *__pyx_self, 
+static PyMethodDef __pyx_mdef_8tsfilter_16rank_correlation_8spearman_5standard_deviation = {"standard_deviation", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_8tsfilter_16rank_correlation_8spearman_5standard_deviation, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8tsfilter_16rank_correlation_8spearman_5standard_deviation(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -19475,11 +19478,11 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("spearman.standard_deviation", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.standard_deviation", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8spearman_4standard_deviation(__pyx_self, __pyx_v_ranks1);
+  __pyx_r = __pyx_pf_8tsfilter_16rank_correlation_8spearman_4standard_deviation(__pyx_self, __pyx_v_ranks1);
 
   /* function exit code */
   {
@@ -19492,7 +19495,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1) {
+static PyObject *__pyx_pf_8tsfilter_16rank_correlation_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ranks1) {
   PyObject *__pyx_v_nb_classes = NULL;
   PyObject *__pyx_v_n = NULL;
   PyObject *__pyx_v_sd = NULL;
@@ -19512,7 +19515,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("standard_deviation", 1);
 
-  /* "spearman.pyx":86
+  /* "tsfilter/rank_correlation/spearman.pyx":86
  * 
  * def standard_deviation(ranks1):
  *     nb_classes = np.shape(ranks1)[1]             # <<<<<<<<<<<<<<
@@ -19552,7 +19555,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __pyx_v_nb_classes = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "spearman.pyx":87
+  /* "tsfilter/rank_correlation/spearman.pyx":87
  * def standard_deviation(ranks1):
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]             # <<<<<<<<<<<<<<
@@ -19592,7 +19595,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __pyx_v_n = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "spearman.pyx":88
+  /* "tsfilter/rank_correlation/spearman.pyx":88
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  *     sd = np.zeros(nb_classes, dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -19626,7 +19629,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __pyx_v_sd = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "spearman.pyx":89
+  /* "tsfilter/rank_correlation/spearman.pyx":89
  *     n = np.shape(ranks1)[0]
  *     sd = np.zeros(nb_classes, dtype=np.float64)
  *     standard_deviation_cdef(ranks1, n, nb_classes, sd)             # <<<<<<<<<<<<<<
@@ -19637,13 +19640,13 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_n); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 89, __pyx_L1_error)
   __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_v_nb_classes); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 89, __pyx_L1_error)
   __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_v_sd, PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 89, __pyx_L1_error)
-  __pyx_f_8spearman_standard_deviation_cdef(__pyx_t_7, __pyx_t_4, __pyx_t_8, __pyx_t_9);
+  __pyx_f_8tsfilter_16rank_correlation_8spearman_standard_deviation_cdef(__pyx_t_7, __pyx_t_4, __pyx_t_8, __pyx_t_9);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_7, 1);
   __pyx_t_7.memview = NULL; __pyx_t_7.data = NULL;
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_9, 1);
   __pyx_t_9.memview = NULL; __pyx_t_9.data = NULL;
 
-  /* "spearman.pyx":90
+  /* "tsfilter/rank_correlation/spearman.pyx":90
  *     sd = np.zeros(nb_classes, dtype=np.float64)
  *     standard_deviation_cdef(ranks1, n, nb_classes, sd)
  *     return sd             # <<<<<<<<<<<<<<
@@ -19655,7 +19658,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __pyx_r = __pyx_v_sd;
   goto __pyx_L0;
 
-  /* "spearman.pyx":85
+  /* "tsfilter/rank_correlation/spearman.pyx":85
  *     return corr
  * 
  * def standard_deviation(ranks1):             # <<<<<<<<<<<<<<
@@ -19672,7 +19675,7 @@ static PyObject *__pyx_pf_8spearman_4standard_deviation(CYTHON_UNUSED PyObject *
   __Pyx_XDECREF(__pyx_t_6);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_7, 1);
   __PYX_XCLEAR_MEMVIEW(&__pyx_t_9, 1);
-  __Pyx_AddTraceback("spearman.standard_deviation", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("tsfilter.rank_correlation.spearman.standard_deviation", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_nb_classes);
@@ -19820,7 +19823,7 @@ static PyType_Slot __pyx_type___pyx_array_slots[] = {
   {0, 0},
 };
 static PyType_Spec __pyx_type___pyx_array_spec = {
-  "spearman.array",
+  "tsfilter.rank_correlation.spearman.array",
   sizeof(struct __pyx_array_obj),
   0,
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_SEQUENCE,
@@ -19866,7 +19869,7 @@ static PyBufferProcs __pyx_tp_as_buffer_array = {
 
 static PyTypeObject __pyx_type___pyx_array = {
   PyVarObject_HEAD_INIT(0, 0)
-  "spearman.""array", /*tp_name*/
+  "tsfilter.rank_correlation.spearman.""array", /*tp_name*/
   sizeof(struct __pyx_array_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_array, /*tp_dealloc*/
@@ -20026,7 +20029,7 @@ static PyType_Slot __pyx_type___pyx_MemviewEnum_slots[] = {
   {0, 0},
 };
 static PyType_Spec __pyx_type___pyx_MemviewEnum_spec = {
-  "spearman.Enum",
+  "tsfilter.rank_correlation.spearman.Enum",
   sizeof(struct __pyx_MemviewEnum_obj),
   0,
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
@@ -20036,7 +20039,7 @@ static PyType_Spec __pyx_type___pyx_MemviewEnum_spec = {
 
 static PyTypeObject __pyx_type___pyx_MemviewEnum = {
   PyVarObject_HEAD_INIT(0, 0)
-  "spearman.""Enum", /*tp_name*/
+  "tsfilter.rank_correlation.spearman.""Enum", /*tp_name*/
   sizeof(struct __pyx_MemviewEnum_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_Enum, /*tp_dealloc*/
@@ -20333,7 +20336,7 @@ static PyType_Slot __pyx_type___pyx_memoryview_slots[] = {
   {0, 0},
 };
 static PyType_Spec __pyx_type___pyx_memoryview_spec = {
-  "spearman.memoryview",
+  "tsfilter.rank_correlation.spearman.memoryview",
   sizeof(struct __pyx_memoryview_obj),
   0,
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
@@ -20379,7 +20382,7 @@ static PyBufferProcs __pyx_tp_as_buffer_memoryview = {
 
 static PyTypeObject __pyx_type___pyx_memoryview = {
   PyVarObject_HEAD_INIT(0, 0)
-  "spearman.""memoryview", /*tp_name*/
+  "tsfilter.rank_correlation.spearman.""memoryview", /*tp_name*/
   sizeof(struct __pyx_memoryview_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_memoryview, /*tp_dealloc*/
@@ -20531,7 +20534,7 @@ static PyType_Slot __pyx_type___pyx_memoryviewslice_slots[] = {
   {0, 0},
 };
 static PyType_Spec __pyx_type___pyx_memoryviewslice_spec = {
-  "spearman._memoryviewslice",
+  "tsfilter.rank_correlation.spearman._memoryviewslice",
   sizeof(struct __pyx_memoryviewslice_obj),
   0,
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC|Py_TPFLAGS_SEQUENCE,
@@ -20541,7 +20544,7 @@ static PyType_Spec __pyx_type___pyx_memoryviewslice_spec = {
 
 static PyTypeObject __pyx_type___pyx_memoryviewslice = {
   PyVarObject_HEAD_INIT(0, 0)
-  "spearman.""_memoryviewslice", /*tp_name*/
+  "tsfilter.rank_correlation.spearman.""_memoryviewslice", /*tp_name*/
   sizeof(struct __pyx_memoryviewslice_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc__memoryviewslice, /*tp_dealloc*/
@@ -20763,7 +20766,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_size, __pyx_k_size, sizeof(__pyx_k_size), 0, 0, 1, 1},
     {&__pyx_n_s_spearman, __pyx_k_spearman, sizeof(__pyx_k_spearman), 0, 0, 1, 1},
     {&__pyx_n_s_spearman_distinct_ranks, __pyx_k_spearman_distinct_ranks, sizeof(__pyx_k_spearman_distinct_ranks), 0, 0, 1, 1},
-    {&__pyx_kp_s_spearman_pyx, __pyx_k_spearman_pyx, sizeof(__pyx_k_spearman_pyx), 0, 0, 1, 0},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_n_s_standard_deviation, __pyx_k_standard_deviation, sizeof(__pyx_k_standard_deviation), 0, 0, 1, 1},
     {&__pyx_n_s_start, __pyx_k_start, sizeof(__pyx_k_start), 0, 0, 1, 1},
@@ -20776,6 +20778,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_struct, __pyx_k_struct, sizeof(__pyx_k_struct), 0, 0, 1, 1},
     {&__pyx_n_s_sys, __pyx_k_sys, sizeof(__pyx_k_sys), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
+    {&__pyx_kp_s_tsfilter_rank_correlation_spearm, __pyx_k_tsfilter_rank_correlation_spearm, sizeof(__pyx_k_tsfilter_rank_correlation_spearm), 0, 0, 1, 0},
+    {&__pyx_n_s_tsfilter_rank_correlation_spearm_2, __pyx_k_tsfilter_rank_correlation_spearm_2, sizeof(__pyx_k_tsfilter_rank_correlation_spearm_2), 0, 0, 1, 1},
     {&__pyx_kp_s_unable_to_allocate_array_data, __pyx_k_unable_to_allocate_array_data, sizeof(__pyx_k_unable_to_allocate_array_data), 0, 0, 1, 0},
     {&__pyx_kp_s_unable_to_allocate_shape_and_str, __pyx_k_unable_to_allocate_shape_and_str, sizeof(__pyx_k_unable_to_allocate_shape_and_str), 0, 0, 1, 0},
     {&__pyx_n_s_unpack, __pyx_k_unpack, sizeof(__pyx_k_unpack), 0, 0, 1, 1},
@@ -20952,7 +20956,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__18);
   __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(1, 1, __pyx_L1_error)
 
-  /* "spearman.pyx":58
+  /* "tsfilter/rank_correlation/spearman.pyx":58
  * 
  * #- ENTRY POINTS ---------------------------------------------------------------
  * def spearman_distinct_ranks(ranks1, ranks2):             # <<<<<<<<<<<<<<
@@ -20962,9 +20966,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__20 = PyTuple_Pack(5, __pyx_n_s_ranks1, __pyx_n_s_ranks2, __pyx_n_s_nb_classes, __pyx_n_s_n, __pyx_n_s_corr); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__20);
   __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_spearman_pyx, __pyx_n_s_spearman_distinct_ranks, 58, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tsfilter_rank_correlation_spearm, __pyx_n_s_spearman_distinct_ranks, 58, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 58, __pyx_L1_error)
 
-  /* "spearman.pyx":70
+  /* "tsfilter/rank_correlation/spearman.pyx":70
  * 
  * 
  * def spearman(ranks1, ranks2, sd1, sd2):             # <<<<<<<<<<<<<<
@@ -20974,9 +20978,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__22 = PyTuple_Pack(8, __pyx_n_s_ranks1, __pyx_n_s_ranks2, __pyx_n_s_sd1, __pyx_n_s_sd2, __pyx_n_s_nb_classes, __pyx_n_s_n, __pyx_n_s_cov, __pyx_n_s_corr); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__22);
   __Pyx_GIVEREF(__pyx_tuple__22);
-  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_spearman_pyx, __pyx_n_s_spearman, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tsfilter_rank_correlation_spearm, __pyx_n_s_spearman, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 70, __pyx_L1_error)
 
-  /* "spearman.pyx":85
+  /* "tsfilter/rank_correlation/spearman.pyx":85
  *     return corr
  * 
  * def standard_deviation(ranks1):             # <<<<<<<<<<<<<<
@@ -20986,7 +20990,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__24 = PyTuple_Pack(4, __pyx_n_s_ranks1, __pyx_n_s_nb_classes, __pyx_n_s_n, __pyx_n_s_sd); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__24);
   __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_spearman_pyx, __pyx_n_s_standard_deviation, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tsfilter_rank_correlation_spearm, __pyx_n_s_standard_deviation, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -21498,14 +21502,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_spearman) {
+  if (__pyx_module_is_main_tsfilter__rank_correlation__spearman) {
     if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name_2, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "spearman")) {
-      if (unlikely((PyDict_SetItemString(modules, "spearman", __pyx_m) < 0))) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "tsfilter.rank_correlation.spearman")) {
+      if (unlikely((PyDict_SetItemString(modules, "tsfilter.rank_correlation.spearman", __pyx_m) < 0))) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -22039,7 +22043,7 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Enum, __pyx_t_7) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "spearman.pyx":2
+  /* "tsfilter/rank_correlation/spearman.pyx":2
  * #cython: language_level=3
  * import numpy as np             # <<<<<<<<<<<<<<
  * 
@@ -22050,43 +22054,43 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_7) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "spearman.pyx":58
+  /* "tsfilter/rank_correlation/spearman.pyx":58
  * 
  * #- ENTRY POINTS ---------------------------------------------------------------
  * def spearman_distinct_ranks(ranks1, ranks2):             # <<<<<<<<<<<<<<
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8spearman_1spearman_distinct_ranks, 0, __pyx_n_s_spearman_distinct_ranks, NULL, __pyx_n_s_spearman, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8tsfilter_16rank_correlation_8spearman_1spearman_distinct_ranks, 0, __pyx_n_s_spearman_distinct_ranks, NULL, __pyx_n_s_tsfilter_rank_correlation_spearm_2, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_spearman_distinct_ranks, __pyx_t_7) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "spearman.pyx":70
+  /* "tsfilter/rank_correlation/spearman.pyx":70
  * 
  * 
  * def spearman(ranks1, ranks2, sd1, sd2):             # <<<<<<<<<<<<<<
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8spearman_3spearman, 0, __pyx_n_s_spearman, NULL, __pyx_n_s_spearman, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8tsfilter_16rank_correlation_8spearman_3spearman, 0, __pyx_n_s_spearman, NULL, __pyx_n_s_tsfilter_rank_correlation_spearm_2, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_spearman, __pyx_t_7) < 0) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "spearman.pyx":85
+  /* "tsfilter/rank_correlation/spearman.pyx":85
  *     return corr
  * 
  * def standard_deviation(ranks1):             # <<<<<<<<<<<<<<
  *     nb_classes = np.shape(ranks1)[1]
  *     n = np.shape(ranks1)[0]
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8spearman_5standard_deviation, 0, __pyx_n_s_standard_deviation, NULL, __pyx_n_s_spearman, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_8tsfilter_16rank_correlation_8spearman_5standard_deviation, 0, __pyx_n_s_standard_deviation, NULL, __pyx_n_s_tsfilter_rank_correlation_spearm_2, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_standard_deviation, __pyx_t_7) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "spearman.pyx":1
+  /* "tsfilter/rank_correlation/spearman.pyx":1
  * #cython: language_level=3             # <<<<<<<<<<<<<<
  * import numpy as np
  * 
@@ -22105,7 +22109,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_7);
   if (__pyx_m) {
     if (__pyx_d && stringtab_initialized) {
-      __Pyx_AddTraceback("init spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init tsfilter.rank_correlation.spearman", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     #if !CYTHON_USE_MODULE_STATE
     Py_CLEAR(__pyx_m);
@@ -22119,7 +22123,7 @@ if (!__Pyx_RefNanny) {
     }
     #endif
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init spearman");
+    PyErr_SetString(PyExc_ImportError, "init tsfilter.rank_correlation.spearman");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
