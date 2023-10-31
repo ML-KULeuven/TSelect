@@ -75,7 +75,7 @@ features_test = extractor.transform(x_test)
 ```
 
 ### Fusion and filtering only
-If you only want to use the fusion and/or filtering components of this package.
+If you only want to use the fusion and/or filtering components of this package, you can use the `FusionFilter` class directly.
 ```python
 
 from tsfilter.filters.tsfilter import TSFilter
@@ -86,21 +86,11 @@ from tsfilter.filters.tsfilter import TSFilter
 views = None
 add_tags = id
 compatible = lambda x: True
-X_tsfuse = get_tsfuse_format(X, views=views, add_tags=add_tags)
 
-# Fusion
-extractor = TSFuseExtractor(transformers='full', compatible=compatible)
-data = tsfuse_extractor.initialize(X_tsfuse, y)
-tsfuse_extractor.series_to_series(data, select_non_redundant=False)
-X_tsfuse = tsfuse_extractor.get_selected_series(data)
-X_tsfuse = {str(k): v for k, v in X_tsfuse.items()}
+fusionfilter = FusionFilter(views=views, add_tags=add_tags, compatible=compatible)
+x_pd_train = fusionfilter.fit(x_train, y, return_format='dataframe')
+x_pd_test = fusionfilter.transform(x_test, return_format='dataframe')
 
-# Filtering
-series_filter = TSFilter(irrelevant_filter=True, redundant_filter=True)
-series_filter.fit(X_tsfuse, y) # The filter also supports MultiIndex DataFrames
-tsfuse_extractor.set_subset_selected_series(series_filter.filtered_series)
-
-# Transforming the data
-
+[...] # Further processing of the fused and selected signals.
 
 ```
