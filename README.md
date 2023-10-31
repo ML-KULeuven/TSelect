@@ -41,9 +41,8 @@ features_test = extractor.transform(x_test)
 ```
 
 ### Feature extraction with MiniRocket
-
 ```python
-tsfilter.minirocket import MiniRocketExtractor
+from tsfilter.minirocket import MiniRocketExtractor
 from tsfilter.filters.tsfilter import TSFilter
 
 [...] # load data, split in train and test set, etc.
@@ -56,4 +55,52 @@ features_train = extractor.transform(x_train)
 features_test = extractor.transform(x_test)
 
 [...] # Training a model, etc.
+```
+
+### Feature extraction with Catch22
+```python
+from tsfilter.catch22 import Catch22Extractor
+from tsfilter.filters.tsfilter import TSFilter
+
+[...] # load data, split in train and test set, etc.
+
+# If fusion is used, the `views`, `add_tags`, and `compatible` arguments must also be specified for correct data transformation.
+# More information on these arguments can be found on [TSFuse](https://github.com/arnedb/tsfuse#data-format).
+extractor = Catch22Extractor(series_fusion=True, irrelevant_filter=True, redundant_filter=True)
+extractor.fit(x_train, y_train)
+features_train = extractor.transform(x_train)
+features_test = extractor.transform(x_test)
+
+[...] # Training a model, etc.
+```
+
+### Fusion and filtering only
+If you only want to use the fusion and/or filtering components of this package.
+```python
+
+from tsfilter.filters.tsfilter import TSFilter
+
+[...] # load data, split in train and test set, etc.
+
+# Default arguments, please specify this for the used data
+views = None
+add_tags = id
+compatible = lambda x: True
+X_tsfuse = get_tsfuse_format(X, views=views, add_tags=add_tags)
+
+# Fusion
+extractor = TSFuseExtractor(transformers='full', compatible=compatible)
+data = tsfuse_extractor.initialize(X_tsfuse, y)
+tsfuse_extractor.series_to_series(data, select_non_redundant=False)
+X_tsfuse = tsfuse_extractor.get_selected_series(data)
+X_tsfuse = {str(k): v for k, v in X_tsfuse.items()}
+
+# Filtering
+series_filter = TSFilter(irrelevant_filter=True, redundant_filter=True)
+series_filter.fit(X_tsfuse, y) # The filter also supports MultiIndex DataFrames
+tsfuse_extractor.set_subset_selected_series(series_filter.filtered_series)
+
+# Transforming the data
+
+
 ```
