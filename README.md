@@ -77,8 +77,7 @@ features_test = extractor.transform(x_test)
 ### Fusion and filtering only
 If you only want to use the fusion and/or filtering components of this package, you can use the `FusionFilter` class directly.
 ```python
-
-from tsfilter.filters.tsfilter import TSFilter
+from tsfilter import FusionFilter
 
 [...] # load data, split in train and test set, etc.
 
