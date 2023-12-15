@@ -19,7 +19,7 @@ pip install -r requirements.txt
 On Windows, the installation of the pycatch22 package can fail. Installing the package with the following command
 usually fixes this.
 ```
-pip install pycatch22=0.4.2 --use-deprecated=legacy-resolver
+pip install pycatch22==0.4.2 --use-deprecated=legacy-resolver
 ```
 
 ## Examples
