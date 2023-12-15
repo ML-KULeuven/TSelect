@@ -15,7 +15,7 @@ setup(
     install_requires=[
         'matplotlib>=3.7.3',
         'pandas>=1.5.3',
-        'pycatch22>=0.4.4',
+        'pycatch22>=0.4.2',
         'scikit_learn>=1.1.3',
         'sktime>=0.23.1',
         'Deprecated~=1.2.14',
