@@ -10,7 +10,7 @@ Clone the repository.
 ```
 git clone https://github.com/LorenNuyts/TSFilter.git
 ```
-Install the requirements with pip.
+Go to the newly created repository and install the requirements with pip.
 ```
 pip install -r requirements.txt
 ```
@@ -19,7 +19,7 @@ pip install -r requirements.txt
 On Windows, the installation of the pycatch22 package can fail. Installing the package with the following command
 usually fixes this.
 ```
-pip install pycatch22=0.4.2 --use-deprecated=legacy-resolver
+pip install pycatch22==0.4.2 --use-deprecated=legacy-resolver
 ```
 
 ## Examples
