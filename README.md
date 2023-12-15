@@ -10,7 +10,7 @@ Clone the repository.
 ```
 git clone https://github.com/LorenNuyts/TSFilter.git
 ```
-Install the requirements with pip.
+Go to the newly created repository and install the requirements with pip.
 ```
 pip install -r requirements.txt
 ```
