@@ -11,9 +11,8 @@ import pandas as pd
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
 from tsfuse.data import Collection
-
-from tsfuse.transformers import *
 from tsfuse.computation import Graph, Input
+from tsfuse.transformers import *
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
@@ -28,6 +27,7 @@ class TSFuseExtractor(TransformerMixin):
                  transformers='full',
                  max_depth=3,
                  series_fusion=True,
+                 attribute_fusion=True,
                  series_filter=None,
                  max_series_permutations=10,
                  max_attribute_permutations=1000,
@@ -43,6 +43,7 @@ class TSFuseExtractor(TransformerMixin):
         self.max_depth = max_depth
         self.series_fusion = series_fusion
         self.series_filter = series_filter
+        self.attribute_fusion = attribute_fusion
         self.max_series_permutations = max_series_permutations
         self.max_attribute_permutations = max_attribute_permutations
         self.max_series_correlation = max_series_correlation
@@ -55,7 +56,9 @@ class TSFuseExtractor(TransformerMixin):
         self.graph_ = None
         self.depth_ = None
         self.task_ = None
-        self.generated_attributes_ = []
+
+    def set_series_filter(self, series_filter):
+        self.series_filter = series_filter
 
     def transform(self, X, return_dataframe=True, chunk_size=None):
         return self.graph_.transform(X, return_dataframe=return_dataframe, chunk_size=chunk_size)
@@ -68,14 +71,15 @@ class TSFuseExtractor(TransformerMixin):
 
             print("     Series to series")
             self.series_to_series(data, metadata, select_non_redundant=self.series_filter is None)
+            print("             Number of fused signals: ", len(self.series_))
 
             if self.series_filter is not None:
                 print("     Filtering series")
                 start = time.process_time()
                 self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y, metadata)
                 self.set_subset_selected_series(self.series_filter.filtered_series)
-                if metadata:
-                    metadata[Keys.time_series_filtering].append(time.process_time() - start)
+                metadata[Keys.time_series_filtering].append(time.process_time() - start)
+                print("           Number of fused signals: ", len(self.series_))
 
             print("     Series to attributes")
             self.series_to_attributes(data, metadata)
@@ -141,10 +145,14 @@ class TSFuseExtractor(TransformerMixin):
                 p_prev = 0
                 for t in sorted(transformers, key=self.num_parents):
                     p = self.num_parents(t)
+                    try:
+                        commutative = t(*(nodes_c + nodes_d)[:p]).commutative
+                    except TypeError:
+                        commutative = False
                     if p != p_prev:
                         # Generate compatible permutations
                         permutations = []
-                        for permutation in self.generate_permutations(nodes_c, nodes_d, p):
+                        for permutation in self.generate_permutations(nodes_c, nodes_d, p, commutative=commutative):
                             if (p > 1) and (len(permutations) >= self.max_series_permutations):
                                 break
                             if self.check_compatible(data, permutation):
@@ -249,7 +257,7 @@ class TSFuseExtractor(TransformerMixin):
         start = time.process_time()
 
         # Collect all extracted and generated attributes
-        attributes = self.extracted_attributes_ + self.generated_attributes_
+        attributes = self.extracted_attributes_
 
         # Group similar features
         def p(node):
@@ -288,10 +296,10 @@ class TSFuseExtractor(TransformerMixin):
         if metadata:
             metadata[Keys.time_select].append(time.process_time() - start)
             metadata[Keys.deleted_attr].append(
-                len(self.extracted_attributes_ + self.generated_attributes_) - len(self.selected_attributes_))
+                len(self.extracted_attributes_) - len(self.selected_attributes_))
             metadata[Keys.remaining_attr].append(len(self.selected_attributes_))
 
-    def generate_permutations(self, nodes_c, nodes_d, p):
+    def generate_permutations(self, nodes_c, nodes_d, p, commutative=False):
         nodes_c = nodes_c[:]
         nodes_d = nodes_d[:]
         if self.random_state is not None: random.seed(self.random_state)
@@ -300,8 +308,11 @@ class TSFuseExtractor(TransformerMixin):
         def generate(x, other, n):
             if n > 1:
                 for permutation in itertools.permutations(other, n - 1):
-                    for i in range(n):
-                        yield list(permutation[:i]) + [x] + list(permutation[i:])
+                    if not commutative:
+                        for i in range(n):
+                            yield list(permutation[:i]) + [x] + list(permutation[i:])
+                    else:
+                        yield list(permutation) + [x]
             else:
                 yield [x]
 
@@ -456,8 +467,8 @@ def create(setting):
         'series-to-series-fusion':
             [
                 lambda x: Resultant(x),
-                lambda x, y: Average(x, y, with_preconditions=[single_dimension]),
-                lambda x, y: Difference(x, y, with_preconditions=[single_dimension]),
+                lambda x, y: Average(x, y, with_preconditions=[single_dimension], commutative=True),
+                lambda x, y: Difference(x, y, with_preconditions=[single_dimension], commutative=True),
                 lambda x, y: Ratio(x, y, with_preconditions=[single_dimension, non_zero_second_argument]),
                 lambda a, b, c: Angle(a, b, c),
             ],

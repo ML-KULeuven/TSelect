@@ -1,5 +1,4 @@
 import time
-import warnings
 from abc import ABC, abstractmethod
 from typing import Union, Dict
 
@@ -68,88 +67,24 @@ class AbstractExtractor(ABC):
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
-        self.fusionfilter = FusionFilter(series_fusion=series_fusion,
-                                         irrelevant_filter=irrelevant_filter,
-                                         redundant_filter=redundant_filter,
-                                         auc_percentage=auc_percentage,
-                                         auc_threshold=auc_threshold,
-                                         corr_threshold=corr_threshold,
-                                         test_size=test_size,
-                                         views=views,
-                                         add_tags=add_tags,
-                                         compatible=compatible,
-                                         random_state=random_state)
-        # self.series_fusion = series_fusion
-        # self.irrelevant_filter = irrelevant_filter
-        # self.redundant_filter = redundant_filter
-        # self.series_filtering = irrelevant_filter or redundant_filter
-        # self.auc_percentage = auc_percentage
-        # self.auc_threshold = auc_threshold
-        # self.corr_threshold = corr_threshold
-        # self.test_size = test_size
-        # self.views = views
-        # self.add_tags = add_tags
-        # self.compatible = compatible
-        # self.random_state = random_state
-        #
-        # self.tsfuse_extractor = TSFuseExtractor(transformers='full', compatible=compatible, random_state=SEED)
-        # self.series_filter = self.__init_filter__()
-        # if self.series_filtering:
-        #     self.tsfuse_extractor.series_filter = self.series_filter
-        #
-        # self.included_inputs = []
-        # self.nodes_translation = {}
+        self.fusion_filter: FusionFilter = FusionFilter(series_fusion=series_fusion,
+                                                        irrelevant_filter=irrelevant_filter,
+                                                        redundant_filter=redundant_filter,
+                                                        auc_percentage=auc_percentage,
+                                                        auc_threshold=auc_threshold,
+                                                        corr_threshold=corr_threshold,
+                                                        test_size=test_size,
+                                                        views=views,
+                                                        add_tags=add_tags,
+                                                        compatible=compatible,
+                                                        random_state=random_state)
 
-    # def __init_filter__(self):
-    #     """
-    #     Initialize the filter. This function is called in the constructor and should be implemented by the child class
-    #     if non-default behavior is required (default behavior is the MiniRocketFilter).
-    #     """
-    #     return self.fusionfilter.__init_filter__()
+    @property
+    def series_filter(self):
+        return self.fusion_filter.series_filter
 
-    # def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
-    #     """
-    #     Transform the data by fusing the series. This function is called in the transform function and should be
-    #     implemented by the child class if non-default behavior is required.
-    #
-    #     Parameters
-    #     ----------
-    #     X_tsfuse : Dict[Union[str, int], Collection]
-    #         The data to transform in the TSFuse format.
-    #
-    #     Returns
-    #     -------
-    #     X_tsfuse : Dict[Union[str, int], Collection]
-    #         The transformed data in the TSFuse format.
-    #     """
-    #     dict_collection = self.tsfuse_extractor.transform(X_tsfuse, return_dataframe=False)
-    #     dict_collection = {self.nodes_translation[k]: v for k, v in dict_collection.items()}
-    #     inputs = {f'Input({i.name})': X_tsfuse[i.name] for i in self.included_inputs}
-    #     dict_collection.update(inputs)
-    #     if isinstance(self.series_filter, TSFilter):
-    #         dict_collection = self.series_filter.scaler.transform(dict_collection)
-    #     return dict_collection
-
-    # def transform_filter(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]):
-    #     """
-    #     Transform the data by filtering the series. This function is called in the transform function and should be
-    #     implemented by the child class if non-default behavior is required.
-    #
-    #     Parameters
-    #     ----------
-    #     X : pd.DataFrame or Dict[Union[str, int], Collection]
-    #         The data to transform in the MultiIndex Pandas or TSFuse format.
-    #
-    #     Returns
-    #     -------
-    #     X : pd.DataFrame or Dict[Union[str, int], Collection]
-    #         The transformed data in the MultiIndex Pandas or TSFuse format.
-    #     """
-    #     if isinstance(X, pd.DataFrame):
-    #         rename_columns_pd(X, self.nodes_translation)
-    #     elif isinstance(X, dict):
-    #         X = rename_keys_dict(X, self.nodes_translation)
-    #     return self.series_filter.transform(X)
+    def set_series_filter(self, series_filter):
+        self.fusion_filter.series_filter = series_filter
 
     @abstractmethod
     def transform_model(self, X):
@@ -183,7 +118,7 @@ class AbstractExtractor(ABC):
         X : pd.DataFrame
             The transformed data in the MultiIndex Pandas format.
         """
-        X_pd = self.fusionfilter.transform(X, return_format='dataframe')
+        X_pd = self.fusion_filter.transform(X, return_format='dataframe')
         return self.transform_model(X_pd)
 
     @abstractmethod
@@ -221,8 +156,9 @@ class AbstractExtractor(ABC):
         -------
         None, but the model and filter should be fitted.
         """
-        X_pd = self.fusionfilter.fit(X, y, metadata, return_format='dataframe')
+        X_pd = self.fusion_filter.fit(X, y, metadata, return_format='dataframe')
 
+        print("     Executing model")
         start = time.process_time()
         self.fit_model(X_pd, y)
         if metadata:

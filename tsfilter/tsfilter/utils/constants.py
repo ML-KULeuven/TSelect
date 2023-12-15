@@ -76,7 +76,10 @@ class Keys:
     auc_score = 'roc_auc_score'
 
     xgboost_default = 'xgboost_default'
+    ensemble = 'ensemble'
 
     cv5x2 = '5x2cv'
 
     scaler = 'scaler'
+    statistics = 'statistics'
+    minirocket = 'minirocket'

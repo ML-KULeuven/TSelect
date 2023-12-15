@@ -5,9 +5,10 @@ import inspect
 from functools import partial
 
 import numpy as np
-from tsfuse.data import Tags, Collection
+from tsfuse.data import Tags
 
-from tsfuse.errors import InvalidPreconditionError
+from ..data import Collection
+from ..errors import InvalidPreconditionError
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -206,6 +207,8 @@ class Transformer(Node):
         if not hasattr(self, 'preconditions_parents'):
             self.preconditions_parents = []
         self.preconditions_parents += kwargs.get('with_preconditions_parents', [])
+        self.commutative = kwargs.get('commutative', False)
+
         super(Transformer, self).__init__(parents=parents, is_output=is_output)
 
     def check_preconditions(self, *collections, return_bool=True):

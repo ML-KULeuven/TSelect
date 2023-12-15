@@ -85,15 +85,18 @@ class FusionFilter(TransformerMixin):
         self.random_state = random_state
 
         self.tsfuse_extractor = TSFuseExtractor(transformers='full', compatible=compatible, random_state=SEED)
-        self.series_filter = TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                                      random_state=SEED, auc_percentage=self.auc_percentage,
-                                      filtering_threshold_corr=self.corr_threshold,
-                                      filtering_test_size=self.test_size) if self.series_filtering else None
+        self.__init_filter__()
         if self.series_filtering:
             self.tsfuse_extractor.series_filter = self.series_filter
 
         self.included_inputs = []
         self.nodes_translation = {}
+
+    def __init_filter__(self):
+        self.series_filter = TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
+                                      random_state=SEED, auc_percentage=self.auc_percentage,
+                                      filtering_threshold_corr=self.corr_threshold,
+                                      filtering_test_size=self.test_size) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
         """
@@ -158,14 +161,15 @@ class FusionFilter(TransformerMixin):
         if isinstance(X, pd.DataFrame):
             X_pd = X
             X_tsfuse = None
+            input_format = 'dataframe'
         else:
             X_pd = None
             X_tsfuse = X
+            input_format = 'tsfuse'
         if self.series_fusion:
             if not X_tsfuse:
                 X_tsfuse = get_tsfuse_format(X, views=self.views, add_tags=self.add_tags)
             X_tsfuse = self.transform_fusion(X_tsfuse)
-            # X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
 
         if self.series_filter and (not self.series_fusion):
             # If the series are fused, the tsfuse extractor takes care of only returning the filtered series
@@ -173,17 +177,7 @@ class FusionFilter(TransformerMixin):
             if isinstance(X, dict) and return_format == 'dataframe':
                 X_pd = dict_collection_to_pd_multiindex(X, index=X_pd.index if X_pd is not None else None)
 
-        if return_format == 'tsfuse':
-            if X_pd is None or (self.series_filter is not None and self.series_fusion):
-                return X_tsfuse
-            else:
-                return pd_multiindex_to_dict_collection(X_pd, views=self.views, add_tags=self.add_tags)
-        elif return_format == 'dataframe':
-            if X_pd is None:
-                X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
-            return X_pd
-        else:
-            raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")
+        return self.transform_to_output_format(X_pd, X_tsfuse, input_format, return_format)
 
     def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None,
             return_format='dataframe'):
@@ -210,9 +204,11 @@ class FusionFilter(TransformerMixin):
         if isinstance(X, pd.DataFrame):
             X_pd = X
             X_tsfuse = None
+            input_format = 'pd'
         else:
             X_pd = None
             X_tsfuse = X
+            input_format = 'tsfuse'
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -244,25 +240,31 @@ class FusionFilter(TransformerMixin):
                 print("         Total filtering time: ", time.process_time() - start)
 
             # After filtering because fewer nodes should be added then
-            if self.series_fusion:
-                for n in self.tsfuse_extractor.series_:
-                    n._is_output = True
-                    new_node = self.tsfuse_extractor.graph_.add_node(n)
-                    if isinstance(n, (Input, int, str)):
-                        self.included_inputs.append(n)
-                        self.nodes_translation[new_node.name] = n
-                    else:
-                        self.nodes_translation[new_node] = n
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if self.series_fusion:
+                    for n in self.tsfuse_extractor.series_:
+                        n._is_output = True
+                        new_node = self.tsfuse_extractor.graph_.add_node(n)
+                        if isinstance(n, (Input, int, str)):
+                            self.included_inputs.append(n)
+                            self.nodes_translation[new_node.name] = n
+                        else:
+                            self.nodes_translation[new_node] = n
 
-            if return_format == 'tsfuse':
-                if X_pd is None or (self.series_filter is not None and self.series_fusion):
-                    return X_tsfuse
-                else:
-                    return pd_multiindex_to_dict_collection(X_pd, views=self.views, add_tags=self.add_tags)
+            return self.transform_to_output_format(X_pd, X_tsfuse, input_format, return_format)
 
-            elif return_format == 'dataframe':
-                if X_pd is None:
-                    X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
-                return X_pd
+    def transform_to_output_format(self, X_pd, X_tsfuse, input_format, return_format):
+        if return_format == 'tsfuse':
+            if input_format == 'tsfuse' or self.series_fusion:
+                return X_tsfuse
             else:
-                raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")
+                return pd_multiindex_to_dict_collection(X_pd, views=self.views, add_tags=self.add_tags)
+
+        elif return_format == 'dataframe':
+            if input_format == 'tsfuse' or self.series_fusion:
+                X_pd = dict_collection_to_pd_multiindex(X_tsfuse, index=X_pd.index if X_pd is not None else None)
+            return X_pd
+        else:
+            raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")
+

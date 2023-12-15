@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "tsfilter"
+version = "0.1.0"
+description = "Package for selecting the relevant and non-redundant signals for multivariate time series classification."
+authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>",
+           "Arne De Brabandere"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

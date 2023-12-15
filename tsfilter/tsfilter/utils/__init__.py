@@ -154,12 +154,13 @@ def pad_until_length(x: Union[pd.DataFrame, pd.Series], length: int) -> pd.DataF
     pd.DataFrame
         The padded dataframe or series.
     """
-    nb_instances = get_nb_instances_multiindex(x)
+    nb_timepoints = x.index.levels[1].shape[0]
+    all_indices = list(x.index)
     new_values = []
-    for i in range(nb_instances):
-        nb_timepoints = x.loc[i].shape[0]
-        value = x.loc[i, nb_timepoints - 1].values
-        new_indexes = [(i, t) for t in range(nb_timepoints, length)]
+    for i in range(nb_timepoints - 1, len(all_indices), nb_timepoints):
+        index = all_indices[i]
+        value = x.loc[index]
+        new_indexes = [(index[0], t) for t in range(nb_timepoints, length)]
         new_values.append(pd.DataFrame(np.tile(value, (length - nb_timepoints, 1)), index=new_indexes,
                                        columns=x.columns))
 
@@ -599,7 +600,34 @@ def get_tsfuse_format(X: Union[pd.DataFrame, Dict[Union[str, int], Collection]],
     """
     from tsfuse.data import pd_multiindex_to_dict_collection
     if isinstance(X, pd.DataFrame):
+        if views is None:
+            views = X.columns
         X_tsfuse = pd_multiindex_to_dict_collection(X, add_tags=add_tags, views=views)
+    else:
+        X_tsfuse = X
+    return X_tsfuse
+
+
+def get_tsfuse_format_np(X: Union[np.ndarray, Dict[Union[str, int], Collection]]) -> Dict[Union[str, int], Collection]:
+    """
+    Converts `X` to the TSFuse format.
+
+    Parameters
+    ----------
+    X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]
+        The MultiIndex dataframe (Pandas MultiIndex format) or dictionary of Collections (TSFuse format) that will
+        be converted to the TSFuse format. If it is already in the TSFuse format, it is returned unchanged.
+
+    Return
+    ------
+    X_tsfuse: Dict[Union[str, int], Collection]
+        `X` in TSFuse format
+    """
+    from tsfuse.data import numpy3d_to_dict_collection
+    if isinstance(X, np.ndarray):
+        views = list(range(X.shape[1]))
+        views_ext = {v: [v] for v in views}
+        X_tsfuse = numpy3d_to_dict_collection(X, views_ext=views_ext)
     else:
         X_tsfuse = X
     return X_tsfuse
@@ -776,3 +804,7 @@ def multiindex_to_singleindex(X: Union[pd.Series, pd.DataFrame]) -> pd.DataFrame
     return x1.pivot(index=x1.columns[0], columns=x1.columns[1])
 
 
+def replace_nans_by_col_mean(features):
+    col_mean = np.nanmean(features, axis=0)
+    inds = np.where(np.isnan(features))
+    features[inds] = np.take(col_mean, inds[1])

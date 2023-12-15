@@ -1,9 +1,9 @@
 import numpy as np
 
-from tsfuse.computation import Transformer
-from tsfuse.data import Collection
-from tsfuse.transformers.calculators.queries import aggregate
-from tsfuse.transformers.util import transform_axis, apply_to_axis
+from ..computation import Transformer
+from ..data import Collection
+from .util import transform_axis, apply_to_axis
+from .calculators.queries import *
 
 __all__ = [
     'Count',

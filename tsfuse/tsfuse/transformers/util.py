@@ -1,6 +1,6 @@
 import numpy as np
 
-from tsfuse.data import Collection
+from ..data import Collection
 
 __all__ = [
     'apply',
@@ -39,8 +39,7 @@ def apply_to_axis(calculator, *collections, **params):
     values = []
     for collection in collections:
         values.append(np.rollaxis(mask_nan(collection), a, start=3))
-    temp = calculator(*values, **params)
-    transformed = np.rollaxis(temp, 2, start=a)
+    transformed = np.rollaxis(calculator(*values, **params), 2, start=a)
     if transformed.shape == collections[0].values.shape:
         return Collection(
             values=transformed,

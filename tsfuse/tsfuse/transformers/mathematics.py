@@ -1,11 +1,11 @@
 import warnings
 import numpy as np
 
-from tsfuse.data import units
-from tsfuse.computation import Transformer, Graph
-from tsfuse.transformers.util import apply, apply_to_axis
-from tsfuse.computation.nodes import Add, Subtract, Multiply, Divide, Constant
-from tsfuse.transformers.queries import Slice
+from ..data import units
+from ..computation import Transformer, Graph
+from .util import apply, apply_to_axis
+from ..computation.nodes import Add, Subtract, Multiply, Divide, Constant
+from .queries import Slice
 
 __all__ = [
     'Add',

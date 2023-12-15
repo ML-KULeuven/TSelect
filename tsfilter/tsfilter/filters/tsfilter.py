@@ -1,10 +1,11 @@
+import time
+import warnings
 from _operator import itemgetter
 from math import ceil
 from typing import Union, Dict
 
 import numpy as np
 import pandas as pd
-from deprecated import deprecated
 from sklearn.base import TransformerMixin
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
@@ -36,6 +37,7 @@ class TSFilter(TransformerMixin):
                  auc_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
                  filtering_test_size: float = None,
+                 print_times: bool = False
                  ):
         """
         Parameters
@@ -44,7 +46,6 @@ class TSFilter(TransformerMixin):
             Whether to filter out irrelevant series based on their AUC score
         redundant_filter: bool, default=True
             Whether to filter out redundant series based on their rank correlation
-            The number of jobs to use in MiniRocket
         random_state: int, default=SEED
             The random state used throughout the class.
         filtering_threshold_auc: float, default=0.5
@@ -59,7 +60,7 @@ class TSFilter(TransformerMixin):
         filtering_test_size: float, default=None
             The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
             percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-            If None, the train size is derived from max(100, 0.25*nb_instances). The test set then contains the remaining
+            If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
             instances.
         """
         self.irrelevant_filter = irrelevant_filter
@@ -79,10 +80,14 @@ class TSFilter(TransformerMixin):
         self._sorted_auc: Optional[List[Union[str, int]]] = None
         self.auc_percentage = auc_percentage
         self.features = None
+        self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
+                            "Removing uninformative signals": 0, "Computing ranks": 0}
         self.scaler = None
         self.columns = None
         self.map_columns_np = None
         self.index = None
+        self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
+        self.print_times = print_times
 
     def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]) \
             -> Union[pd.DataFrame, Dict[Union[str, int], Collection]]:
@@ -104,7 +109,7 @@ class TSFilter(TransformerMixin):
         elif isinstance(X, dict):
             return {k: v for k, v in X.items() if k in self.filtered_series}
 
-    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False,) -> None:
+    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False) -> None:
         """
         Fit the filter to the data.
 
@@ -138,19 +143,29 @@ class TSFilter(TransformerMixin):
 
         if self.filtered_series is not None and not force:
             return None
-        ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y,)
-        if self.irrelevant_filter:
-            ranks = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
+        ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y)
 
-            if len(ranks) == 0:
-                raise ValueError(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
-                                 f" was {highest_removed_auc}.")
-            elif len(ranks) == 1 and self.redundant_filter:
+        if self.irrelevant_filter:
+            start = time.process_time()
+            ranks_filtered = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
+
+            if len(ranks_filtered) == 0:
+                # The unfiltered ranks will be kept.
+                warnings.warn(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
+                              f" was {highest_removed_auc}. For this run, all signals that passed the absolute AUC "
+                              f"threshold are kept.")
+
+            elif len(ranks_filtered) == 1 and self.redundant_filter:
+                # print("     Only one series passed the AUC filtering, no need to compute rank correlations")
                 self.rank_correlation = dict()
-                self.clusters = [list(ranks.keys())]
-                self.filtered_series = list(ranks.keys())
+                self.clusters = [list(ranks_filtered.keys())]
+                self.filtered_series = list(ranks_filtered.keys())
                 self.update_metadata(metadata)
                 return None
+            else:
+                ranks = ranks_filtered
+            if self.print_times:
+                print("         Time AUC filtering: ", time.process_time() - start)
 
         if self.redundant_filter:
             self.redundant_filtering(ranks)
@@ -177,7 +192,9 @@ class TSFilter(TransformerMixin):
         """
         from tsfilter import MinMaxScaler3D
         self.scaler = MinMaxScaler3D()
-        X_np = self.scaler.fit_transform(X)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            X_np = self.scaler.fit_transform(X)
         if np.isnan(X_np).any():
             interpolate_nan_3d(X_np, inplace=True)
         return X_np
@@ -199,7 +216,9 @@ class TSFilter(TransformerMixin):
         """
         from tsfilter.utils.scaler import MinMaxScalerCollections
         self.scaler = MinMaxScalerCollections()
-        scaled_X = self.scaler.fit_transform(X, inplace=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            scaled_X = self.scaler.fit_transform(X, inplace=True)
         for key in X.keys():
             if np.isnan(scaled_X[key].values).any():
                 ffill_nan(scaled_X[key].values, inplace=True)
@@ -225,6 +244,7 @@ class TSFilter(TransformerMixin):
         float
             The highest AUC score that was removed because it was below the AUC threshold
         """
+        start = time.process_time()
         if X_np is None:
             X = X_tsfuse
             tsfuse_format = True
@@ -235,37 +255,69 @@ class TSFilter(TransformerMixin):
         train_ix, test_ix = self.train_test_split(X)
         y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
         highest_removed_auc = 0
+        predictions_removed_signals = {}
 
         for i, col in enumerate(self.columns):
-            features_train, features_test = self.extract_features(X, col, train_ix, test_ix,
+            start2 = time.process_time()
+            features_train, features_test = self.extract_features(X, col, train_ix, test_ix, i,
                                                                   tsfuse_format=tsfuse_format)
+            self.times["Extracting features"] += time.process_time() - start2
 
+            start2 = time.process_time()
             clf = LogisticRegression(random_state=self.random_state)
-            clf.fit(features_train, y_train)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                clf.fit(features_train, y_train)
+            self.models["Models"][col] = clf
+            self.times["Training model"] += time.process_time() - start2
+            start2 = time.process_time()
             if np.isnan(features_test).any():
-                nan_rows = np.isnan(features_test).any(axis=1)
-                features_test = features_test[~nan_rows, :]
-                y_test_no_nan = y_test.iloc[~nan_rows]
-            else:
-                y_test_no_nan = y_test
+                replace_nans_by_col_mean(features_test)
+
             predict_proba = clf.predict_proba(features_test)
-            if np.unique(y_test_no_nan).shape[0] != predict_proba.shape[1]:
+            if np.unique(y_test).shape[0] != predict_proba.shape[1]:
                 raise ValueError("Not all classes are present in the test set, increase the test size to be able to "
                                  "compute the AUC")
+            self.times["Predictions"] += time.process_time() - start2
 
-            auc_col = roc_auc_score(encode_onehot(y_test_no_nan), predict_proba)
+            start2 = time.process_time()
+            auc_col = roc_auc_score(encode_onehot(y_test), predict_proba)
+            self.times["Computing AUC"] += time.process_time() - start2
 
+            start2 = time.process_time()
             if self.irrelevant_filter:
                 # Test AUC series high enough
                 if auc_col < self.filtering_threshold_auc:
-                    self.removed_series_auc.add(col)
+                    self.removed_series_auc.add((col, auc_col))
+                    predictions_removed_signals[col] = predict_proba
                     if auc_col > highest_removed_auc:
                         highest_removed_auc = auc_col
                     continue
-
-            self.acc_col[col] = clf.score(features_test, y_test_no_nan)
+            self.times["Removing uninformative signals"] += time.process_time() - start2
             self.auc_col[col] = auc_col
+            start2 = time.process_time()
             ranks[col] = probabilities2rank(predict_proba)
+            self.times["Computing ranks"] += time.process_time() - start2
+
+        # If no series passed the AUC threshold filtering, keep all series for now
+        if len(ranks) == 0:
+            warnings.warn(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
+                          f" was {highest_removed_auc}. For this run, no series below the absolute AUC threshold "
+                          f"(default=0.5) were removed.")
+            for col, auc in self.removed_series_auc:
+                self.auc_col[col] = auc
+                start2 = time.process_time()
+                ranks[col] = probabilities2rank(predictions_removed_signals[col])
+                self.times["Computing ranks"] += time.process_time() - start2
+
+        if self.print_times:
+            print("         Total: Time AUC per series: ", time.process_time() - start)
+            print("             | Time extracting features: ", self.times["Extracting features"])
+            print("             | Time training model: ", self.times["Training model"])
+            print("             | Time predictions: ", self.times["Predictions"])
+            print("             | Time computing AUC: ", self.times["Computing AUC"])
+            print("             | Time removing uninformative signals: ", self.times["Removing uninformative signals"])
+            print("             | Time computing ranks: ", self.times["Computing ranks"])
         return ranks, highest_removed_auc
 
     def redundant_filtering(self, ranks: dict):
@@ -277,11 +329,21 @@ class TSFilter(TransformerMixin):
         ranks: dict
             A dictionary with the rank for each dimension in the format {(signal1, signal2): rank}
         """
-        self.rank_correlation = pairwise_rank_correlation(ranks)
-        included_series = set(ranks.keys())
+        start = time.process_time()
+        self.rank_correlation, included_series = \
+            pairwise_rank_correlation_opt(ranks, self.sorted_auc, corr_threshold=self.filtering_threshold_corr)
+
+        if self.print_times:
+            print("         Time computing rank correlations: ", time.process_time() - start)
+        start = time.process_time()
         self.clusters = cluster_correlations(self.rank_correlation, included_series,
                                              threshold=self.filtering_threshold_corr)
+        if self.print_times:
+            print("         Time clustering: ", time.process_time() - start)
+        start = time.process_time()
         self.filtered_series = self.choose_from_clusters()
+        if self.print_times:
+            print("         Time choose from cluster: ", time.process_time() - start)
 
     def update_metadata(self, metadata):
         """
@@ -295,7 +357,8 @@ class TSFilter(TransformerMixin):
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
-    def extract_features(self, X, col, train_ix, test_ix, tsfuse_format=False) -> (np.ndarray, np.ndarray):
+    def extract_features(self, X, col, train_ix, test_ix, i, tsfuse_format=False) -> (
+            np.ndarray, np.ndarray):
         """
         Extract the features for a single dimension.
 
@@ -309,6 +372,8 @@ class TSFilter(TransformerMixin):
             The indices of the training set
         test_ix: list
             The indices of the test set
+        i: int
+            The index of the dimension to extract the features from, needed for the raw or catch22 mode.
         tsfuse_format: bool, default=False
             Whether the data `X` is in TSFuse format or not.
 
@@ -320,52 +385,32 @@ class TSFilter(TransformerMixin):
             The features of the test set
         """
         if not tsfuse_format:
-            X = get_tsfuse_format(X)
-        stats = SinglePassStatistics().transform(X[col]).values[:, :, 0]
+            X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+        else:
+            X_i = X[col]
+        stats = SinglePassStatistics().transform(X_i).values[:, :, 0]
         features_train = stats[train_ix, :]
         features_test = stats[test_ix, :]
-
         # Drop all NaN columns
         if np.isnan(features_train).any():
             nan_cols = np.isnan(features_train).all(axis=0)
+            if col not in self.models["DroppedNanCols"].keys():
+                self.models["DroppedNanCols"][col] = nan_cols
             features_train = features_train[:, ~nan_cols]
             features_test = features_test[:, ~nan_cols]
         # Drop rows where NaN still exist
         if np.isnan(features_train).any():
-            ffill_nan(features_train)
-            ffill_nan(features_test)
+            replace_nans_by_col_mean(features_train)
+            replace_nans_by_col_mean(features_test)
         scaler = MinMaxScaler()
-        features_train = scaler.fit_transform(features_train)
-        features_test = scaler.transform(features_test)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            features_train = scaler.fit_transform(features_train)
+            features_test = scaler.transform(features_test)
+        if col not in self.models["Scaler"].keys():
+            self.models["Scaler"][col] = scaler
 
         return features_train, features_test
-
-    @deprecated
-    def train_test_split_pd(self, X: pd.DataFrame) -> (list, list):
-        """
-        Split the data into a training and test set.
-
-        Parameters
-        ----------
-        X: pd.DataFrame
-            The data to split
-
-        Returns
-        -------
-        list
-            The indices of the training set
-        list
-            The indices of the test set
-        """
-        nb_instances = get_nb_instances_multiindex(X)
-        test_size = self.compute_test_size(nb_instances)
-        train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
-                                                     test_size=test_size,
-                                                     random_state=self.random_state)
-        index_values = sorted(list({i for i, _ in X.index.values}))
-        train_ix = sorted([index_values[i] for i in train_ix_all])
-        test_ix = sorted([index_values[i] for i in test_ix_all])
-        return train_ix, test_ix
 
     def train_test_split(self, X: Union[np.ndarray, Dict[Union[str, int], Collection]]) -> (list, list):
         """
@@ -388,12 +433,28 @@ class TSFilter(TransformerMixin):
         else:
             nb_instances = X.shape[0]
         test_size = self.compute_test_size(nb_instances)
+
+        if self.print_times:
+            print("         Test size: ", test_size)
         train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
                                                      test_size=test_size,
                                                      random_state=self.random_state)
         return train_ix_all, test_ix_all
 
     def compute_test_size(self, nb_instances):
+        """
+        Compute the test size based on the number of instances.
+
+        Parameters
+        ----------
+        nb_instances: int
+            The number of instances in the data
+
+        Returns
+        -------
+        float
+            The test size
+        """
         if self.test_size:
             test_size = self.test_size
         elif nb_instances < 100:
@@ -479,6 +540,6 @@ class TSFilter(TransformerMixin):
         for i in range(len(self.sorted_auc) - 1, -1, -1):
             if self.auc_col[self.sorted_auc[i]] > threshold:
                 break
-            self.removed_series_auc.add(self.sorted_auc[i])
+            self.removed_series_auc.add((self.sorted_auc[i], self.auc_col[self.sorted_auc[i]]))
         self._sorted_auc = self.sorted_auc[:i + 1]
         self.auc_col = {k: self.auc_col[k] for k in self.sorted_auc}

@@ -5,7 +5,7 @@ from sklearn.base import TransformerMixin
 
 from tsfilter import SEED
 from tsfilter.abstract_extractor import AbstractExtractor
-from tsfilter.utils import reset_first_level_index
+from tsfilter.utils import reset_first_level_index, pad_until_length
 from sktime.transformations.panel.rocket import (
     MiniRocketMultivariateVariable,
 )
@@ -31,6 +31,7 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
                  num_kernels: int = 10_000,
                  max_dilations_per_kernel: int = 32,
                  n_jobs: int = 1,
+                 task: str = 'auto',
                  random_state: int = SEED):
         """
         The constructor for MiniRocketExtractor class.
@@ -76,6 +77,9 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
             The maximum number of dilations per kernel to use for the MiniRocket transformation.
         n_jobs : int, optional, default 1
             The number of jobs to use MiniRocket.
+        task: str, default='auto'
+            The task to perform. Can be either 'auto', 'classification' or 'regression'. If 'auto', the task is inferred
+            from the data.
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
@@ -85,20 +89,6 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
                                                          max_dilations_per_kernel=max_dilations_per_kernel,
                                                          n_jobs=n_jobs,
                                                          random_state=random_state)
-
-    # def __init_filter__(self):
-    #     """
-    #     Initializes the filter to use for filtering out irrelevant and redundant signals.
-    #
-    #     Returns
-    #     -------
-    #     TSFilter
-    #         The filter to use for filtering out irrelevant and redundant signals. The used parameters are the ones
-    #         specified in the constructor of this class.
-    #     """
-    #     return TSFilter(random_state=SEED, auc_percentage=self.auc_percentage,
-    #                     filtering_threshold_corr=self.corr_threshold, filtering_test_size=self.test_size) \
-    #         if self.series_filtering else None
 
     def transform_model(self, X: pd.DataFrame):
         """
@@ -114,6 +104,9 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
         pd.DataFrame
             The transformed data.
         """
+        if X.index.levels[1].shape[0] < 9:
+            X = pad_until_length(X, 9)
+        
         return self.minirocket.transform(X)
 
     def fit_model(self, X: pd.DataFrame, y: pd.Series):
@@ -127,6 +120,9 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
         y : pd.Series
             The target values.
         """
+        if X.index.levels[1].shape[0] < 9:
+            X = pad_until_length(X, 9)
+
         X_mini, y_mini = reset_first_level_index(X, y)
         self.minirocket.fit(X_mini, y_mini)
         return None

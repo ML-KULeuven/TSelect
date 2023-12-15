@@ -1,8 +1,8 @@
 import numpy as np
 
-from tsfuse.computation import Transformer
-from tsfuse.computation.nodes import Greater, Less
-from tsfuse.data import Collection
+from ..computation import Transformer
+from ..computation.nodes import Greater, Less
+from ..data import Collection
 
 __all__ = [
     'Greater',
