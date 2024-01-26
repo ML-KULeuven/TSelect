@@ -12,16 +12,18 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from tsfilter.utils.constants import SEED
-from tsfilter.utils import *
+from tselect.utils.constants import SEED
+from tselect.utils import *
 
 from tsfuse.data import Collection
 from tsfuse.transformers import SinglePassStatistics
 from tsfuse.utils import encode_onehot
-from tsfilter.rank_correlation.rank_correlation import *
+from tselect.rank_correlation.rank_correlation import *
+
+new_irrelevant_filter = False
 
 
-class TSFilter(TransformerMixin):
+class TSelect(TransformerMixin):
     """
     A class for selecting a relevant and non-redundant set of signals.
     Filtering is done in two steps: first, irrelevant series are filtered out based on their AUC score. Second,
@@ -190,7 +192,7 @@ class TSFilter(TransformerMixin):
             The preprocessed data
 
         """
-        from tsfilter import MinMaxScaler3D
+        from tselect import MinMaxScaler3D
         self.scaler = MinMaxScaler3D()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -214,7 +216,7 @@ class TSFilter(TransformerMixin):
             The preprocessed data in TSFuse format
 
         """
-        from tsfilter.utils.scaler import MinMaxScalerCollections
+        from tselect.utils.scaler import MinMaxScalerCollections
         self.scaler = MinMaxScalerCollections()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -284,16 +286,17 @@ class TSFilter(TransformerMixin):
             auc_col = roc_auc_score(encode_onehot(y_test), predict_proba)
             self.times["Computing AUC"] += time.process_time() - start2
 
-            start2 = time.process_time()
-            if self.irrelevant_filter:
-                # Test AUC series high enough
-                if auc_col < self.filtering_threshold_auc:
-                    self.removed_series_auc.add((col, auc_col))
-                    predictions_removed_signals[col] = predict_proba
-                    if auc_col > highest_removed_auc:
-                        highest_removed_auc = auc_col
-                    continue
-            self.times["Removing uninformative signals"] += time.process_time() - start2
+            if not new_irrelevant_filter:
+                start2 = time.process_time()
+                if self.irrelevant_filter:
+                    # Test AUC series high enough
+                    if auc_col < self.filtering_threshold_auc:
+                        self.removed_series_auc.add((col, auc_col))
+                        predictions_removed_signals[col] = predict_proba
+                        if auc_col > highest_removed_auc:
+                            highest_removed_auc = auc_col
+                        continue
+                self.times["Removing uninformative signals"] += time.process_time() - start2
             self.auc_col[col] = auc_col
             start2 = time.process_time()
             ranks[col] = probabilities2rank(predict_proba)
@@ -514,6 +517,7 @@ class TSFilter(TransformerMixin):
             The filtered data
         """
         assert 0 <= p <= 1
+        print("     AUC percentage: ", p)
 
         i = len(self.auc_col.keys()) - ceil(len(self.auc_col.keys()) * p)  # how many items should be removed
         if i == 0:

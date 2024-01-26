@@ -7,7 +7,7 @@ import pycatch22
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
-from tsfilter.utils.constants import Keys
+from tselect.utils.constants import Keys
 
 from tsfuse.data import Collection
 

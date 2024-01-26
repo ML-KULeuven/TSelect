@@ -13,6 +13,7 @@ class Keys:
     y = "y"
 
     extractor = 'extractor'
+    fusion_filter = 'FusionFilter'
 
     construction = "construction"
     time_series_to_series = "time_series_to_series"
@@ -64,7 +65,7 @@ class Keys:
     min_series_per_cluster = "min_series_per_cluster"
 
     computation_all = "computation_all"
-    comp_average_time = "average_time_compute"
+    average_computation_time = "average_time_compute"
     total_time = "total_time"
     std_total_time = "std_total_time"
 
@@ -74,9 +75,19 @@ class Keys:
     average_time_predict = "average_time_predict"
     accuracy_score = 'accuracy_score'
     auc_score = 'roc_auc_score'
+    std_acc_score = "std_accuracy_score"
+    std_auc_score = "std_roc_auc_score"
+    std_time_train = "std_time_train"
+    std_time_predict = "std_time_predict"
+    std_time_compute = "std_time_compute"
+    accuracy_score_train = 'accuracy_score_train'
+    roc_auc_train = 'roc_auc_score_train'
+    average_accuracy_score_train = 'average_accuracy_score_train'
+    average_roc_auc_train = 'average_roc_auc_score_train'
 
     xgboost_default = 'xgboost_default'
     ensemble = 'ensemble'
+    lr_default = 'lr_default'
 
     cv5x2 = '5x2cv'
 
