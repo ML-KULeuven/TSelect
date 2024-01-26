@@ -2,7 +2,7 @@ import pandas as pd
 import pycatch22
 from sklearn.base import TransformerMixin
 
-from tsfilter.abstract_extractor import AbstractExtractor
+from tselect.abstract_extractor import AbstractExtractor
 
 
 class Catch22Extractor(AbstractExtractor, TransformerMixin):

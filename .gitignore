@@ -1,11 +1,11 @@
 
 .idea/
 
-tsfilter/build/
+tselect/build/
 
-tsfilter/dist/
+tselect/dist/
 
-tsfilter/tsfilter.egg-info/
+tselect/tsfilter.egg-info/
 
 tsfuse/.github/
 

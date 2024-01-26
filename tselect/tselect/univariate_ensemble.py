@@ -8,8 +8,8 @@ from sklearn.base import TransformerMixin
 from sklearn.linear_model import LogisticRegression
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
-from tsfilter import SEED, Keys, replace_nans_by_col_mean, pad_until_length_tsfuse, pad_until_length
-from tsfilter.abstract_extractor import AbstractExtractor
+from tselect import SEED, Keys, replace_nans_by_col_mean, pad_until_length_tsfuse, pad_until_length
+from tselect.abstract_extractor import AbstractExtractor
 from tsfuse.construction.mlj20 import TSFuseExtractor
 from tsfuse.data import Collection
 from tsfuse.transformers import SinglePassStatistics

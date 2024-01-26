@@ -5,10 +5,10 @@ from typing import Union, Dict
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from tsfilter.filters.tsfilter import TSFilter
-from tsfilter.utils import *
-from tsfilter.utils.constants import SEED, Keys
-from tsfilter.utils.scaler import MinMaxScaler3D
+from tselect.channel_selectors.tselect import TSelect
+from tselect.utils import *
+from tselect.utils.constants import SEED, Keys
+from tselect.utils.scaler import MinMaxScaler3D
 from tsfuse.computation import Input
 from tsfuse.construction.mlj20 import TSFuseExtractor
 from tsfuse.data import dict_collection_to_pd_multiindex, Collection, pd_multiindex_to_dict_collection
@@ -93,10 +93,10 @@ class FusionFilter(TransformerMixin):
         self.nodes_translation = {}
 
     def __init_filter__(self):
-        self.series_filter = TSFilter(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                                      random_state=SEED, auc_percentage=self.auc_percentage,
-                                      filtering_threshold_corr=self.corr_threshold,
-                                      filtering_test_size=self.test_size) if self.series_filtering else None
+        self.series_filter = TSelect(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
+                                     random_state=SEED, auc_percentage=self.auc_percentage,
+                                     filtering_threshold_corr=self.corr_threshold,
+                                     filtering_test_size=self.test_size) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
         """
@@ -117,7 +117,7 @@ class FusionFilter(TransformerMixin):
         dict_collection = {self.nodes_translation[k]: v for k, v in dict_collection.items()}
         inputs = {f'Input({i.name})': X_tsfuse[i.name] for i in self.included_inputs}
         dict_collection.update(inputs)
-        if isinstance(self.series_filter, TSFilter):
+        if isinstance(self.series_filter, TSelect):
             dict_collection = self.series_filter.scaler.transform(dict_collection)
         return dict_collection
 
@@ -174,8 +174,10 @@ class FusionFilter(TransformerMixin):
         if self.series_filter and (not self.series_fusion):
             # If the series are fused, the tsfuse extractor takes care of only returning the filtered series
             X = self.transform_filter(X)
-            if isinstance(X, dict) and return_format == 'dataframe':
-                X_pd = dict_collection_to_pd_multiindex(X, index=X_pd.index if X_pd is not None else None)
+            if isinstance(X, pd.DataFrame):
+                X_pd = X
+            else:
+                X_tsfuse = X
 
         return self.transform_to_output_format(X_pd, X_tsfuse, input_format, return_format)
 
@@ -267,4 +269,3 @@ class FusionFilter(TransformerMixin):
             return X_pd
         else:
             raise ValueError(f"Unknown return format {return_format}, should be 'dataframe' or 'tsfuse'.")
-

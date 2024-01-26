@@ -4,9 +4,9 @@ from typing import Union, Dict
 
 import pandas as pd
 
-from tsfilter import FusionFilter
-from tsfilter.utils import *
-from tsfilter.utils.constants import SEED, Keys
+from tselect import FusionFilter
+from tselect.utils import *
+from tselect.utils.constants import SEED, Keys
 from tsfuse.data import Collection
 
 

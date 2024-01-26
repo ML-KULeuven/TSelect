@@ -3,9 +3,9 @@ from typing import List
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from tsfilter import SEED
-from tsfilter.abstract_extractor import AbstractExtractor
-from tsfilter.utils import reset_first_level_index, pad_until_length
+from tselect import SEED
+from tselect.abstract_extractor import AbstractExtractor
+from tselect.utils import reset_first_level_index, pad_until_length
 from sktime.transformations.panel.rocket import (
     MiniRocketMultivariateVariable,
 )
@@ -31,7 +31,6 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
                  num_kernels: int = 10_000,
                  max_dilations_per_kernel: int = 32,
                  n_jobs: int = 1,
-                 task: str = 'auto',
                  random_state: int = SEED):
         """
         The constructor for MiniRocketExtractor class.
@@ -77,9 +76,6 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
             The maximum number of dilations per kernel to use for the MiniRocket transformation.
         n_jobs : int, optional, default 1
             The number of jobs to use MiniRocket.
-        task: str, default='auto'
-            The task to perform. Can be either 'auto', 'classification' or 'regression'. If 'auto', the task is inferred
-            from the data.
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
