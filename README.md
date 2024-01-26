@@ -27,7 +27,7 @@ pip install pycatch22==0.4.2 --use-deprecated=legacy-resolver
 TSFuse requires the data to be in a specific format, see [TSFuse](https://github.com/arnedb/tsfuse#data-format) for more information.
 ```python
 from tsfuse.construction.mlj20 import TSFuseExtractor
-from tsfilter.filters.tsfilter import TSFilter
+from tselect.filters.tsfilter import TSelect
 
 [...] # load data, split in train and test set, etc.
 

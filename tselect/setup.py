@@ -4,7 +4,7 @@ from setuptools.extension import Extension
 import numpy as np
 
 setup(
-    name='tsfilter',
+    name='tselect',
     version='1.0.0',
     packages=find_packages(),
     setup_requires=[
@@ -23,7 +23,7 @@ setup(
     ],
     ext_modules=cythonize([
             Extension(
-                'tsfilter.rank_correlation.spearman', ['tsfilter/rank_correlation/spearman.pyx'],
+                'tselect.rank_correlation.spearman', ['tselect/rank_correlation/spearman.pyx'],
                 include_dirs=[np.get_include()]
             ),]
             ),
