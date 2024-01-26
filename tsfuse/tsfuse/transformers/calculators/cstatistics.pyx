@@ -12,7 +12,6 @@ __all__ = [
 import numpy as np
 
 cimport cython
-cimport numpy as np
 
 cdef extern from "<math.h>" nogil:
     const float NAN

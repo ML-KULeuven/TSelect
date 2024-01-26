@@ -13,4 +13,4 @@ six~=1.16.0
 sktime~=0.23.1
 statsmodels~=0.14.0
 -e ./tsfuse
--e ./tsfilter
+-e ./tselect

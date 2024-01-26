@@ -5,7 +5,7 @@
     "distutils": {
         "depends": [],
         "include_dirs": [
-            "/tmp/pip-build-env-evp6b86n/overlay/lib/python3.8/site-packages/numpy/core/include"
+            "/tmp/pip-build-env-9zbf4vx9/overlay/lib/python3.8/site-packages/numpy/core/include"
         ],
         "name": "tselect.rank_correlation.spearman",
         "sources": [
