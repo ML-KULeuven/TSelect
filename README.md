@@ -1,4 +1,4 @@
-# TSFilter
+# TSelect
 
 ## Installation
 ### Pip install
@@ -8,7 +8,7 @@ TODO: publish to PyPI
 (Temporary until published)
 Clone the repository.
 ```
-git clone https://github.com/LorenNuyts/TSFilter.git
+git clone https://github.com/LorenNuyts/TSelect.git
 ```
 Go to the newly created repository and install the requirements with pip.
 ```
@@ -27,12 +27,12 @@ pip install pycatch22==0.4.2 --use-deprecated=legacy-resolver
 TSFuse requires the data to be in a specific format, see [TSFuse](https://github.com/arnedb/tsfuse#data-format) for more information.
 ```python
 from tsfuse.construction.mlj20 import TSFuseExtractor
-from tselect.filters.tsfilter import TSelect
+from tselect.channel_selectors.tselect import TSelect
 
 [...] # load data, split in train and test set, etc.
 
 extractor = TSFuseExtractor(transformers=tsfuse_transformers, compatible=compatible, random_state=SEED,
-                                    series_filter=TSFilter())
+                                    series_filter=TSelect())
 extractor.fit(x_train, y_train)
 features_train = extractor.transform(x_train)
 features_test = extractor.transform(x_test)
@@ -42,8 +42,8 @@ features_test = extractor.transform(x_test)
 
 ### Feature extraction with MiniRocket
 ```python
-from tsfilter.minirocket import MiniRocketExtractor
-from tsfilter.filters.tsfilter import TSFilter
+from tselect.minirocket import MiniRocketExtractor
+from tselect.channel_selectors.tselect import TSelect
 
 [...] # load data, split in train and test set, etc.
 
@@ -59,8 +59,8 @@ features_test = extractor.transform(x_test)
 
 ### Feature extraction with Catch22
 ```python
-from tsfilter.catch22 import Catch22Extractor
-from tsfilter.filters.tsfilter import TSFilter
+from tselect.catch22 import Catch22Extractor
+from tselect.channel_selectors.TSelect import TSelect
 
 [...] # load data, split in train and test set, etc.
 
@@ -77,7 +77,7 @@ features_test = extractor.transform(x_test)
 ### Fusion and filtering only
 If you only want to use the fusion and/or filtering components of this package, you can use the `FusionFilter` class directly.
 ```python
-from tsfilter import FusionFilter
+from tselect import FusionFilter
 
 [...] # load data, split in train and test set, etc.
 
