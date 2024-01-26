@@ -569,7 +569,7 @@ def dict_collection_to_pd_multiindex(X: Dict[Union[str, int], Collection], index
     df : DataFrame
         A Pandas DataFrame with a multi-index and renamed columns.
     """
-    from tsfilter.utils import create_multiindex
+    from tselect.utils import create_multiindex
 
     data = []
     for i, (key, collection) in enumerate(X.items()):

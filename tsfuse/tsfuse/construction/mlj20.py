@@ -18,7 +18,7 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from sklearn.base import TransformerMixin
 
-from tsfilter.utils import Keys
+from tselect.utils import Keys
 
 
 class TSFuseExtractor(TransformerMixin):
