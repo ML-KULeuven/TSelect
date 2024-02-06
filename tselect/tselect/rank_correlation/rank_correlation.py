@@ -114,7 +114,7 @@ def pairwise_rank_correlation(ranks: dict) -> dict:
     return result
 
 
-def pairwise_rank_correlation_opt(ranks: dict, sorted_auc: List[tuple], corr_threshold: float) -> (dict, Set):
+def pairwise_rank_correlation_opt(ranks: dict) -> (dict, Set):
     """
     Computes the pairwise rank correlation between the elements in the input `ranks` dict.
 
@@ -133,21 +133,7 @@ def pairwise_rank_correlation_opt(ranks: dict, sorted_auc: List[tuple], corr_thr
     result = {}
     for i, channel_i in enumerate(channels):
         for channel_j in channels[i + 1:]:
-            # if np.all([np.all(np.unique(ranks[channel_i][:, k]).shape == ranks[channel_i][:, k].shape) for k in
-            #            range(0, ranks[channel_i].shape[1])]) and \
-            #         np.all([np.all(np.unique(ranks[channel_j][:, k]).shape == ranks[channel_i][:, k].shape) for k in
-            #                 range(0, ranks[channel_j].shape[1])]):
-            # if ranks[channel_i].shape[0] != ranks[channel_j].shape[0]:
-            #     overlap = np.intersect1d(ranks[channel_i][:, 0], ranks[channel_j][:, 0])
-            #     ranks_i = ranks[channel_i][overlap, :]
             result[(channel_i, channel_j)] = spearman_distinct_ranks(ranks[channel_i], ranks[channel_j])
-            # else:
-            #     if channel_i not in std.keys():
-            #         std[channel_i] = standard_deviation(ranks[channel_i])
-            #     if channel_j not in std.keys():
-            #         std[channel_j] = standard_deviation(ranks[channel_j])
-            #     result[(channel_i, channel_j)] = (spearman(ranks[channel_i], ranks[channel_j], std[channel_i],
-            #                                                std[channel_j]))
     return result, set(channels)
 
 

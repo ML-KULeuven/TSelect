@@ -2,7 +2,8 @@
 import numpy as np
 
 cimport cython
-from libc.stdint cimport int64_t
+# from libc.stdint cimport int64_t
+from numpy cimport int64_t
 
 
 
@@ -64,7 +65,8 @@ def spearman_distinct_ranks(ranks1, ranks2):
     if np.shape(ranks2)[1] != nb_classes:
         raise ValueError(f"Number of classes do not match: {np.shape(ranks1)} vs {np.shape(ranks2)}")
     corr = np.zeros(np.shape(ranks1)[1], dtype=np.float64)
-    spearman_distinct_ranks_cdef(ranks1, ranks2, n, nb_classes, corr)
+    # ranks1_ = np.array(ranks1, dtype=np.int64)
+    spearman_distinct_ranks_cdef(ranks1.astype(np.int64), ranks2.astype(np.int64), n, nb_classes, corr)
     return corr
 
 
@@ -89,43 +91,3 @@ def standard_deviation(ranks1):
     sd = np.zeros(nb_classes, dtype=np.float64)
     standard_deviation_cdef(ranks1, n, nb_classes, sd)
     return sd
-
-
-# def _validate_input(refset, test):
-#     if refset.dtype != np.uint8 or test.dtype != np.uint8:
-#         raise ValueError("must be byte matrixes")
-#     if refset.shape[1] != test.shape[1]:
-#         raise ValueError("shapes do not match")
-#     if refset.shape[1] >= 255:
-#         raise ValueError("possible overflow due to too many trees and use of uint8")
-#
-# def _prep_input(refset, test, order, dtype):
-#     sh = refset.shape
-#     sz = dtype().itemsize
-#     if sh[1] % sz != 0:
-#         z = np.zeros((sh[0], (sh[1]//sz+1)*sz-sh[1]), dtype=np.uint8)
-#         refset = np.concatenate((refset, z), axis=1)
-#         z = np.zeros((test.shape[0], (sh[1]//sz+1)*sz-sh[1]), dtype=np.uint8)
-#         test = np.concatenate((test, z), axis=1)
-#     refset = np.array(refset.view(dtype), order=order)
-#     test = np.array(test.view(dtype), order=order)
-#     return refset, test
-#
-# def ocscores(refset, test):
-#     _validate_input(refset, test)
-#     refset, test = _prep_input(refset, test, order="F", dtype=np.uint8)
-#
-#     out = np.zeros(test.shape[0], dtype=np.uint32)
-#
-#     _ocscores_colmaj(refset, test, out)
-#     return out
-#
-# def ocscores_topk(refset, test, k):
-#     _validate_input(refset, test)
-#     refset, test = _prep_input(refset, test, order="F", dtype=np.uint8)
-#
-#     indexes = np.zeros((test.shape[0], k), dtype=np.uint32)
-#     scores = np.zeros((test.shape[0], k), dtype=np.uint8)
-#
-#     _ocscores_colmaj_topk(refset, test, indexes, scores)
-#     return indexes, scores

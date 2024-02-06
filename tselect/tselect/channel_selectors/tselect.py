@@ -334,7 +334,7 @@ class TSelect(TransformerMixin):
         """
         start = time.process_time()
         self.rank_correlation, included_series = \
-            pairwise_rank_correlation_opt(ranks, self.sorted_auc, corr_threshold=self.filtering_threshold_corr)
+            pairwise_rank_correlation_opt(ranks)
 
         if self.print_times:
             print("         Time computing rank correlations: ", time.process_time() - start)
