@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tsfilter"
+name = "tselect"
 version = "0.1.0"
 description = "Package for selecting the relevant and non-redundant signals for multivariate time series classification."
 authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>",
@@ -7,7 +7,7 @@ authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>",
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.8.10"
 
 
 [build-system]
