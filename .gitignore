@@ -16,3 +16,9 @@ tsfuse/docsource/
 tsfuse/tests/
 
 dist/
+
+tselect/tselect/rank_correlation/spearman.c
+
+tselect/tselect/rank_correlation/spearman.cpython-310-x86_64-linux-gnu.so
+
+*.so
