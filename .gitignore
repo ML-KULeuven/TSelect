@@ -7,6 +7,8 @@ tselect/dist/
 
 tselect/tselect.egg-info/
 
+tselect/tsfilter.egg-info/
+
 tsfuse/.github/
 
 tsfuse/docs/
@@ -16,3 +18,14 @@ tsfuse/docsource/
 tsfuse/tests/
 
 dist/
+
+tselect/tselect/rank_correlation/build/temp.linux-x86_64-cpython-310/
+
+tselect/tselect/__pycache__/
+**/__pycache__/
+
+tselect/tselect/rank_correlation/build/
+
+tselect/tselect/rank_correlation/spearman.c
+
+*.so
