@@ -22,3 +22,15 @@ tselect/tselect/rank_correlation/spearman.c
 tselect/tselect/rank_correlation/spearman.cpython-310-x86_64-linux-gnu.so
 
 *.so
+
+tselect/tsfilter.egg-info/
+
+tselect/tselect/__pycache__/
+
+tselect/tselect/channel_selectors/__pycache__/
+
+tselect/tselect/rank_correlation/__pycache__/
+
+tselect/tselect/rank_correlation/build/
+
+tselect/tselect/utils/__pycache__/
