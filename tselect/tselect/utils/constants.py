@@ -66,6 +66,7 @@ class Keys:
 
     computation_all = "computation_all"
     average_computation_time = "average_time_compute"
+    std_computation_time = "std_time_compute"
     total_time = "total_time"
     std_total_time = "std_total_time"
 
@@ -95,3 +96,5 @@ class Keys:
     scaler = 'scaler'
     statistics = 'statistics'
     minirocket = 'minirocket'
+
+    average_total_time = "average_total_time"
