@@ -77,7 +77,7 @@ class TSelect(TransformerMixin):
         self.test_size = filtering_test_size
         self.clusters = None
         self.rank_correlation = None
-        self.filtered_series = None
+        self.selected_channels = None
         self.selected_col_nb = None
         self._sorted_auc: Optional[List[Union[str, int]]] = None
         self.auc_percentage = auc_percentage
@@ -107,9 +107,9 @@ class TSelect(TransformerMixin):
             The transformed data in the same format as the input data.
         """
         if isinstance(X, pd.DataFrame):
-            return X[self.filtered_series]
+            return X[self.selected_channels]
         elif isinstance(X, dict):
-            return {k: v for k, v in X.items() if k in self.filtered_series}
+            return {k: v for k, v in X.items() if k in self.selected_channels}
 
     def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False) -> None:
         """
@@ -143,7 +143,7 @@ class TSelect(TransformerMixin):
             self.columns = list(X.keys())
             self.index = X_tsfuse[self.columns[0]].index
 
-        if self.filtered_series is not None and not force:
+        if self.selected_channels is not None and not force:
             return None
         ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y)
 
@@ -161,7 +161,7 @@ class TSelect(TransformerMixin):
                 # print("     Only one series passed the AUC filtering, no need to compute rank correlations")
                 self.rank_correlation = dict()
                 self.clusters = [list(ranks_filtered.keys())]
-                self.filtered_series = list(ranks_filtered.keys())
+                self.selected_channels = list(ranks_filtered.keys())
                 self.update_metadata(metadata)
                 return None
             else:
@@ -172,7 +172,7 @@ class TSelect(TransformerMixin):
         if self.redundant_filter:
             self.redundant_filtering(ranks)
         else:
-            self.filtered_series = list(ranks.keys())
+            self.selected_channels = list(ranks.keys())
 
         self.update_metadata(metadata)
         return None
@@ -344,7 +344,7 @@ class TSelect(TransformerMixin):
         if self.print_times:
             print("         Time clustering: ", time.process_time() - start)
         start = time.process_time()
-        self.filtered_series = self.choose_from_clusters()
+        self.selected_channels = self.choose_from_clusters()
         if self.print_times:
             print("         Time choose from cluster: ", time.process_time() - start)
 

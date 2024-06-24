@@ -231,14 +231,14 @@ class FusionFilter(TransformerMixin):
                 start = time.process_time()
                 if X_tsfuse is None:
                     self.series_filter.fit(X_pd, y, metadata)
-                    X_pd = X_pd[self.series_filter.filtered_series]
+                    X_pd = X_pd[self.series_filter.selected_channels]
                 else:
                     self.series_filter.fit(X_tsfuse, y, metadata)
-                    X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.filtered_series}
+                    X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.selected_channels}
                 if self.series_fusion:
-                    self.tsfuse_extractor.set_subset_selected_series(self.series_filter.filtered_series)
+                    self.tsfuse_extractor.set_subset_selected_series(self.series_filter.selected_channels)
                 metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                print("         Number of series after filtering: ", len(self.series_filter.filtered_series))
+                print("         Number of series after filtering: ", len(self.series_filter.selected_channels))
                 print("         Total filtering time: ", time.process_time() - start)
 
             # After filtering because fewer nodes should be added then
