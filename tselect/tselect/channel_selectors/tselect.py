@@ -353,7 +353,7 @@ class TSelect(TransformerMixin):
         Update the metadata with the results of the filter.
         """
         if metadata:
-            metadata[Keys.series_filtering][Keys.accuracy_score].append(self.acc_col)
+            metadata[Keys.series_filtering][Keys.acc_score].append(self.acc_col)
             metadata[Keys.series_filtering][Keys.auc_score].append(self.auc_col)
             metadata[Keys.series_filtering][Keys.rank_correlation].append(self.rank_correlation)
             metadata[Keys.series_filtering][Keys.removed_series_auc].append(self.removed_series_auc)

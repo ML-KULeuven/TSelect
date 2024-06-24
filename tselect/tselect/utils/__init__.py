@@ -492,7 +492,7 @@ def init_metadata():
                 Keys.fused_attr: [],
                 Keys.deleted_attr: [],
                 Keys.remaining_attr: [],
-                Keys.series_filtering: {Keys.accuracy_score: [], Keys.auc_score: [], Keys.rank_correlation: [],
+                Keys.series_filtering: {Keys.acc_score: [], Keys.auc_score: [], Keys.rank_correlation: [],
                                         Keys.removed_series_auc: [], Keys.removed_series_corr: [],
                                         Keys.series_filter: []}}
 

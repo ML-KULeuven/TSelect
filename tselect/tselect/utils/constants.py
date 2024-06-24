@@ -66,6 +66,7 @@ class Keys:
 
     computation_all = "computation_all"
     average_computation_time = "average_time_compute"
+    std_computation_time = "std_time_compute"
     total_time = "total_time"
     std_total_time = "std_total_time"
 
@@ -73,7 +74,7 @@ class Keys:
     average_auc_score = "average_roc_auc_score"
     average_time_train = "average_time_train"
     average_time_predict = "average_time_predict"
-    accuracy_score = 'accuracy_score'
+    acc_score = 'accuracy_score'
     auc_score = 'roc_auc_score'
     std_acc_score = "std_accuracy_score"
     std_auc_score = "std_roc_auc_score"
@@ -88,9 +89,12 @@ class Keys:
     xgboost_default = 'xgboost_default'
     ensemble = 'ensemble'
     lr_default = 'lr_default'
+    hc_model = 'hc_model'
 
     cv5x2 = '5x2cv'
 
     scaler = 'scaler'
     statistics = 'statistics'
     minirocket = 'minirocket'
+
+    average_total_time = "average_total_time"
