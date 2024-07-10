@@ -288,6 +288,7 @@ class TSelect(TransformerMixin):
             auc_col = roc_auc_score(encode_onehot(y_test), predict_proba)
             self.times["Computing AUC"] += time.process_time() - start2
 
+            all_features[col] = {'train': features_train, 'test': features_test}
             start2 = time.process_time()
             if self.irrelevant_filter:
                 # Test AUC series high enough
@@ -299,7 +300,6 @@ class TSelect(TransformerMixin):
                     continue
             self.times["Removing uninformative signals"] += time.process_time() - start2
             self.auc_col[col] = auc_col
-            all_features[col] = {'train': features_train, 'test': features_test}
 
             start2 = time.process_time()
             ranks[col] = probabilities2rank(predict_proba)
@@ -587,6 +587,8 @@ class TSelect(TransformerMixin):
 
         # Weigh the individual score with the group score
         for channel in self.auc_col.keys():
+            if len(ind_scores[channel]) == 0:
+                continue
             self.auc_col[channel] = (self.auc_col[channel] + np.mean(ind_scores[channel])) / 2
 
     def make_groups_multiple_models(self, group_amounts, group_sizes):
@@ -610,7 +612,10 @@ class TSelect(TransformerMixin):
                 channels_extended.extend(temp_channels)
 
             for j in range(amount):
-                groups[i].append(channels_extended[j * nb_channels_per_group:(j + 1) * nb_channels_per_group])
+                g = list(set(channels_extended[j * nb_channels_per_group:(j + 1) * nb_channels_per_group]))
+                # If there is a group with only one channel, we don't need to train a model
+                if len(g) > 1:
+                    groups[i].append(g)
 
             random.shuffle(all_channels)
 
