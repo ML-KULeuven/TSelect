@@ -1,3 +1,4 @@
+import random
 import time
 import warnings
 from _operator import itemgetter
@@ -10,7 +11,7 @@ from sklearn.base import TransformerMixin
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, normalize
 
 from tselect.utils.constants import SEED
 from tselect.utils import *
@@ -19,8 +20,6 @@ from tsfuse.data import Collection
 from tsfuse.transformers import SinglePassStatistics
 from tsfuse.utils import encode_onehot
 from tselect.rank_correlation.rank_correlation import *
-
-new_irrelevant_filter = False
 
 
 class TSelect(TransformerMixin):
@@ -38,6 +37,7 @@ class TSelect(TransformerMixin):
                  filtering_threshold_auc: float = 0.5,
                  auc_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
+                 multiple_model_weighing: bool = False,
                  filtering_test_size: float = None,
                  print_times: bool = False
                  ):
@@ -81,9 +81,10 @@ class TSelect(TransformerMixin):
         self.selected_col_nb = None
         self._sorted_auc: Optional[List[Union[str, int]]] = None
         self.auc_percentage = auc_percentage
+        self.multiple_models_weighing = multiple_model_weighing
         self.features = None
         self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
-                            "Removing uninformative signals": 0, "Computing ranks": 0}
+                            "Removing uninformative signals": 0, "Computing ranks": 0, "Multiple models weighing": 0}
         self.scaler = None
         self.columns = None
         self.map_columns_np = None
@@ -258,6 +259,7 @@ class TSelect(TransformerMixin):
         y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
         highest_removed_auc = 0
         predictions_removed_signals = {}
+        all_features = {}
 
         for i, col in enumerate(self.columns):
             start2 = time.process_time()
@@ -286,18 +288,19 @@ class TSelect(TransformerMixin):
             auc_col = roc_auc_score(encode_onehot(y_test), predict_proba)
             self.times["Computing AUC"] += time.process_time() - start2
 
-            if not new_irrelevant_filter:
-                start2 = time.process_time()
-                if self.irrelevant_filter:
-                    # Test AUC series high enough
-                    if auc_col < self.filtering_threshold_auc:
-                        self.removed_series_auc.add((col, auc_col))
-                        predictions_removed_signals[col] = predict_proba
-                        if auc_col > highest_removed_auc:
-                            highest_removed_auc = auc_col
-                        continue
-                self.times["Removing uninformative signals"] += time.process_time() - start2
+            start2 = time.process_time()
+            if self.irrelevant_filter:
+                # Test AUC series high enough
+                if auc_col < self.filtering_threshold_auc:
+                    self.removed_series_auc.add((col, auc_col))
+                    predictions_removed_signals[col] = predict_proba
+                    if auc_col > highest_removed_auc:
+                        highest_removed_auc = auc_col
+                    continue
+            self.times["Removing uninformative signals"] += time.process_time() - start2
             self.auc_col[col] = auc_col
+            all_features[col] = {'train': features_train, 'test': features_test}
+
             start2 = time.process_time()
             ranks[col] = probabilities2rank(predict_proba)
             self.times["Computing ranks"] += time.process_time() - start2
@@ -313,6 +316,13 @@ class TSelect(TransformerMixin):
                 ranks[col] = probabilities2rank(predictions_removed_signals[col])
                 self.times["Computing ranks"] += time.process_time() - start2
 
+        # Compute additional models if multiple model weighing is on
+        if self.multiple_models_weighing:
+            start2 = time.process_time()
+            self.irrelevant_selector_multiple_models([0.34, 0.5], [3, 2], all_features,
+                                                     y_train, y_test)
+            self.times["Multiple models weighing"] += time.process_time() - start2
+
         if self.print_times:
             print("         Total: Time AUC per series: ", time.process_time() - start)
             print("             | Time extracting features: ", self.times["Extracting features"])
@@ -321,6 +331,7 @@ class TSelect(TransformerMixin):
             print("             | Time computing AUC: ", self.times["Computing AUC"])
             print("             | Time removing uninformative signals: ", self.times["Removing uninformative signals"])
             print("             | Time computing ranks: ", self.times["Computing ranks"])
+            print("             | Time computing multiple models: ", self.times["Multiple models weighing"])
         return ranks, highest_removed_auc
 
     def redundant_filtering(self, ranks: dict):
@@ -547,3 +558,63 @@ class TSelect(TransformerMixin):
             self.removed_series_auc.add((self.sorted_auc[i], self.auc_col[self.sorted_auc[i]]))
         self._sorted_auc = self.sorted_auc[:i + 1]
         self.auc_col = {k: self.auc_col[k] for k in self.sorted_auc}
+
+    def irrelevant_selector_multiple_models(self, group_sizes: List[float], group_amounts: List[int],
+                                            features_channel: Dict[str, Dict[str, np.ndarray]], y_train: pd.Series,
+                                            y_test: pd.Series):
+        # Divide channels in (1) 3 groups (2) 2 groups
+        groups = self.make_groups_multiple_models(group_amounts, group_sizes)
+
+        # Train a model on each of the groups
+        ind_scores = {ch: [] for ch in self.auc_col.keys()}
+        nb_features_per_channel = features_channel[list(self.auc_col.keys())[0]]["train"].shape[1]
+        for big_group in groups:
+            for group in big_group:
+                model = LogisticRegression(random_state=self.random_state, penalty='l1', solver='saga')
+                features_train = np.concatenate([features_channel[channel]["train"] for channel in group], axis=1)
+                model.fit(features_train, y_train)
+                self.models["Models"][frozenset(group)] = model
+
+                features_test = np.concatenate([features_channel[channel]["test"] for channel in group], axis=1)
+                predictions = model.predict_proba(features_test)
+                auc = roc_auc_score(encode_onehot(y_test), predictions)
+                importances = np.max(np.abs(model.coef_), axis=0)
+                importances = importances / (np.max(importances) - np.min(importances))
+                for channel_index, channel in enumerate(group):
+                    channel_importance = np.max(importances[channel_index * nb_features_per_channel:
+                                                            (channel_index + 1) * nb_features_per_channel])
+                    ind_scores[channel].append(auc * channel_importance)
+
+        # Weigh the individual score with the group score
+        for channel in self.auc_col.keys():
+            self.auc_col[channel] = (self.auc_col[channel] + np.mean(ind_scores[channel])) / 2
+
+    def make_groups_multiple_models(self, group_amounts, group_sizes):
+        assert len(group_sizes) == len(group_amounts)
+        all_channels = list(self.auc_col.keys())
+        seed = SEED
+        groups: List[List[list]] = []
+        for i, size in enumerate(group_sizes):
+            assert 0 < size <= 1, ("The group sizes should be expressed as a percentage of the number of "
+                                   "channels and must lie in the interval (0,1]")
+            amount = group_amounts[i]
+            random.seed(seed)
+            seed += 1
+            groups.append([])
+            random.shuffle(all_channels)
+            nb_channels_per_group = ceil(size * len(all_channels))
+            nb_repetitions = ceil(nb_channels_per_group * amount / len(all_channels))
+            channels_extended = []
+            for j in range(nb_repetitions):
+                temp_channels = random.sample(all_channels, len(all_channels))
+                channels_extended.extend(temp_channels)
+
+            for j in range(amount):
+                groups[i].append(channels_extended[j * nb_channels_per_group:(j + 1) * nb_channels_per_group])
+
+            random.shuffle(all_channels)
+
+        return groups
+
+    def irrelevant_selector_random(self):
+        pass
