@@ -11,7 +11,7 @@ from sklearn.base import TransformerMixin
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, normalize
+from sklearn.preprocessing import MinMaxScaler
 
 from tselect.utils.constants import SEED
 from tselect.utils import *
@@ -38,6 +38,7 @@ class TSelect(TransformerMixin):
                  auc_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
                  multiple_model_weighing: bool = False,
+                 irrelevant_better_than_random: bool = False,
                  filtering_test_size: float = None,
                  print_times: bool = False
                  ):
@@ -53,12 +54,15 @@ class TSelect(TransformerMixin):
         filtering_threshold_auc: float, default=0.5
             The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
             threshold are removed.
-        auc_percentage: float, default=0.75
+        auc_percentage: float, default=0.6
             The percentage of series to keep based on their AUC score. This parameter is only used if
-            irrelevant_filter=True. If auc_percentage=0.75, the 75% series with the highest AUC score are kept.
+            irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
         filtering_threshold_corr: float, default=0.7
              The threshold used for clustering rank correlations. All predictions with a rank correlation above this
              threshold are considered correlated.
+        irrelevant_better_than_random: bool, default=False
+            Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
+            target. If the channel performs Better Than Random (BTR), it is kept.
         filtering_test_size: float, default=None
             The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
             percentage of the data that is used for computing the AUC score. The remaining data is used for training.
@@ -82,6 +86,7 @@ class TSelect(TransformerMixin):
         self._sorted_auc: Optional[List[Union[str, int]]] = None
         self.auc_percentage = auc_percentage
         self.multiple_models_weighing = multiple_model_weighing
+        self.irrelevant_better_than_random = irrelevant_better_than_random
         self.features = None
         self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
                             "Removing uninformative signals": 0, "Computing ranks": 0, "Multiple models weighing": 0}
@@ -148,7 +153,7 @@ class TSelect(TransformerMixin):
             return None
         ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y)
 
-        if self.irrelevant_filter:
+        if self.irrelevant_filter and not self.irrelevant_better_than_random:
             start = time.process_time()
             ranks_filtered = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
 
@@ -291,8 +296,12 @@ class TSelect(TransformerMixin):
             all_features[col] = {'train': features_train, 'test': features_test}
             start2 = time.process_time()
             if self.irrelevant_filter:
-                # Test AUC series high enough
-                if auc_col < self.filtering_threshold_auc:
+                if self.irrelevant_better_than_random:
+                    to_keep = self.irrelevant_selector_random(features_train, features_test, y_train, y_test, auc_col)
+                else:
+                    # Test AUC series high enough
+                    to_keep = not (auc_col < self.filtering_threshold_auc)
+                if not to_keep:
                     self.removed_series_auc.add((col, auc_col))
                     predictions_removed_signals[col] = predict_proba
                     if auc_col > highest_removed_auc:
@@ -371,7 +380,7 @@ class TSelect(TransformerMixin):
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
-    def extract_features(self, X, col, train_ix, test_ix, i, tsfuse_format=False) -> (
+    def extract_features(self, X: Union[dict, np.ndarray], col, train_ix, test_ix, i, tsfuse_format=False) -> (
             np.ndarray, np.ndarray):
         """
         Extract the features for a single dimension.
@@ -621,5 +630,40 @@ class TSelect(TransformerMixin):
 
         return groups
 
-    def irrelevant_selector_random(self):
-        pass
+    def irrelevant_selector_random(self, features_train, features_test, y_train, y_test, reference_auc):
+        """
+        For a single channel, train a model on a random permutation of the target variable and check if the AUC score is
+        below the reference AUC score. If it is, the channel is considered irrelevant and False is returned.
+        Parameters
+        ----------
+        features_train: np.ndarray
+            The features of the training set
+        features_test: np.ndarray
+            The features of the test set
+        y_train: pd.Series
+            The target variable of the training set
+        y_test: pd.Series
+            The target variable of the test set
+        reference_auc:
+            The reference AUC score. This should be the ROCAUC of the unshuffled target variable.
+
+        Returns
+        -------
+        bool
+            Whether the channel should be kept or not. If False, the channel is considered irrelevant.
+
+        """
+        # Shuffle features train
+        np.random.seed(self.random_state)
+        random_indices = np.random.permutation(y_train.shape[0])
+        y_train_random = y_train.iloc[random_indices]
+
+        # Train model
+        model = LogisticRegression(random_state=self.random_state)
+        model.fit(features_train, y_train_random)
+        predictions = model.predict_proba(features_test)
+        auc = roc_auc_score(encode_onehot(y_test), predictions)
+        # print(auc)
+        if auc > reference_auc:
+            print("Random was better with auc: ", auc, " compared to reference auc: ", reference_auc)
+        return auc < reference_auc
