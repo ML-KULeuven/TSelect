@@ -59,7 +59,7 @@ class Keys:
     series_filter = "series_filter"
     num_series_per_cluster = "num_series_per_cluster"
     average_filtered_series = "average_num_folds_series_chosen"
-    average_num_selected_channels = "average_num_selected_channels"
+    average_num_selected_channels = "average_num_clusters/num_selected_channels"
     median_series_per_cluster = "median_series_per_cluster"
     max_series_per_cluster = "max_series_per_cluster"
     min_series_per_cluster = "min_series_per_cluster"
