@@ -72,12 +72,15 @@ class Keys:
 
     average_acc_score = "average_accuracy_score"
     average_auc_score = "average_roc_auc_score"
+    average_ies_score = "average_ies_score"
     average_time_train = "average_time_train"
     average_time_predict = "average_time_predict"
     acc_score = 'accuracy_score'
     auc_score = 'roc_auc_score'
+    ies_score = 'ies_score'
     std_acc_score = "std_accuracy_score"
     std_auc_score = "std_roc_auc_score"
+    std_ies_score = "std_ies_score"
     std_time_train = "std_time_train"
     std_time_predict = "std_time_predict"
     std_time_compute = "std_time_compute"

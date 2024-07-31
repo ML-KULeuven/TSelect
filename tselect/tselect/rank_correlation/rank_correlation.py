@@ -89,6 +89,7 @@ def pairwise_rank_correlation_old(ranks: dict, perm_test: bool = False) -> dict:
             result[(col_i, col_j)] = result_corr
     return result
 
+
 def pairwise_rank_correlation(ranks: dict) -> dict:
     """
     Computes the pairwise rank correlation between the elements in the input `ranks` dict.
