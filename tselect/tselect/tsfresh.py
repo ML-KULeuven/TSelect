@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 from typing import List
 
@@ -81,8 +82,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         pd.DataFrame
             The transformed data.
         """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        with contextlib.redirect_stdout(None):
             return self.tsfresh.transform(X)
 
     def fit_model(self, X: pd.DataFrame, y):
@@ -97,7 +97,6 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
             The target values.
         """
         X_mini, y_mini = reset_first_level_index(X, y)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        with contextlib.redirect_stdout(None):
             self.tsfresh.fit(X_mini, y_mini)
             return None
