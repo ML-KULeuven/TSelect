@@ -96,7 +96,8 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         y : pd.Series
             The target values.
         """
-
         X_mini, y_mini = reset_first_level_index(X, y)
-        self.tsfresh.fit(X_mini, y_mini)
-        return None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.tsfresh.fit(X_mini, y_mini)
+            return None
