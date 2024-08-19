@@ -30,7 +30,7 @@ class TSFuseExtractor(TransformerMixin):
                  attribute_fusion=True,
                  series_filter=None,
                  max_series_permutations=10,
-                 max_attribute_permutations=1000,
+                 max_attribute_permutations=10,
                  max_series_correlation=0.9,
                  coefficients=0.1,
                  interaction=0.1,
@@ -175,14 +175,19 @@ class TSFuseExtractor(TransformerMixin):
 
         # Transform to one-dimensional individual series
         series = self.to1d(data, series)
+
+        if metadata:
+            metadata[Keys.time_series_to_series].append(time.process_time() - start)
         # Select non-redundant series
         if select_non_redundant:
+            start_select = time.process_time()
             series = self.select_non_redundant_series(data, series, corr=self.max_series_correlation)
+            if metadata:
+                metadata[Keys.time_series_filtering].append(time.process_time() - start_select)
         # Done
         self.series_ = series
 
         if metadata:
-            metadata[Keys.time_series_to_series].append(time.process_time() - start)
             metadata[Keys.fused_series].append(len(self.series_) - len_series_start)
 
     def series_to_attributes(self, data, metadata=None):
@@ -190,6 +195,8 @@ class TSFuseExtractor(TransformerMixin):
 
         extracted = []
         series = []
+        if self.max_attribute_permutations == 'max':
+            self.max_attribute_permutations = len(self.series_)
         for s in self.series_:
             x = data[s.trace]
             if x.shape[2] == 1: series.append(s)
@@ -203,7 +210,7 @@ class TSFuseExtractor(TransformerMixin):
                 # Generate compatible permutations
                 permutations = []
                 for permutation in self.generate_permutations([], series, p):
-                    if (p > 1) and (len(permutations) >= self.max_series_permutations):
+                    if (p > 1) and (len(permutations) >= self.max_attribute_permutations):
                         break
                     if self.check_compatible(data, permutation):
                         permutations.append(permutation)

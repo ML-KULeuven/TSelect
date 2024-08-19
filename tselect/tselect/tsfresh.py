@@ -82,8 +82,10 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         pd.DataFrame
             The transformed data.
         """
-        with contextlib.redirect_stdout(None):
-            return self.tsfresh.transform(X)
+        import logging
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)
+        return self.tsfresh.transform(X)
 
     def fit_model(self, X: pd.DataFrame, y):
         """
