@@ -633,7 +633,7 @@ def from_dict_collection_to_nested(x: Dict[Union[str, int], Collection]) -> pd.D
         for timepoints in x[key].values.reshape(N, t):
             if t < max_t:
                 timepoints = np.concatenate((timepoints, np.repeat(timepoints[-1], max_t - t)))
-            values.append(timepoints)
+            values.append(pd.Series(timepoints))
         data[key] = values
 
     return pd.DataFrame(data)
