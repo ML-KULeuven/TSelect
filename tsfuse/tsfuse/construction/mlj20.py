@@ -184,6 +184,9 @@ class TSFuseExtractor(TransformerMixin):
             series = self.select_non_redundant_series(data, series, corr=self.max_series_correlation)
             if metadata:
                 metadata[Keys.time_series_filtering].append(time.process_time() - start_select)
+                series_filter = RedundantSelectorTSFuse(corr_threshold=self.max_series_correlation)
+                series_filter.selected_channels = [str(s) for s in series]
+                metadata[Keys.series_filtering][Keys.series_filter].append(series_filter)
         # Done
         self.series_ = series
 
@@ -635,3 +638,8 @@ def create(setting):
         return minimal
     else:
         return full
+
+class RedundantSelectorTSFuse:
+    def __init__(self, corr_threshold=0.9):
+        self.corr_threshold = corr_threshold
+        self.selected_channels = []

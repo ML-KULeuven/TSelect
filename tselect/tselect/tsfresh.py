@@ -1,5 +1,6 @@
 import contextlib
 import warnings
+import logging
 from typing import List
 
 import pandas as pd
@@ -82,9 +83,11 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         pd.DataFrame
             The transformed data.
         """
-        import logging
         logger = logging.getLogger()
         logger.setLevel(logging.CRITICAL)
+        warnings.filterwarnings("ignore")
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+            # warnings.simplefilter("ignore")
         return self.tsfresh.transform(X)
 
     def fit_model(self, X: pd.DataFrame, y):
@@ -99,6 +102,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
             The target values.
         """
         X_mini, y_mini = reset_first_level_index(X, y)
-        with contextlib.redirect_stdout(None):
-            self.tsfresh.fit(X_mini, y_mini)
-            return None
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)
+        self.tsfresh.fit(X_mini, y_mini)
+        return None
