@@ -166,7 +166,8 @@ class TSFuseExtractor(TransformerMixin):
                             # Compute output
                             output = transformer.transform(*[data[n.trace] for n in permutation])
                             # Checked, now add the transformer to the generated nodes
-                            if output is not None:
+                            if (output is not None and not np.isinf(output.values).any() and
+                                    not np.isnan(output.values).any()):
                                 generated.append(transformer)
                                 data[transformer.trace] = output
                                 self.depth_[transformer.trace] = depth + 1
