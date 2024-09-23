@@ -2,7 +2,9 @@
 
 ## Installation
 ### Pip install
-TODO: publish to PyPI
+```
+pip install tselect
+```
 
 ### Clone repository
 (Temporary until published)
