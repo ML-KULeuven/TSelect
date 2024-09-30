@@ -6,6 +6,7 @@ class Keys:
     """
     A class containing strings that are used as dictionary keys throughout the package.
     """
+    dataset = 'dataset'
     task_regression = 'regression'
     task_classification = 'classification'
     features = "features"
