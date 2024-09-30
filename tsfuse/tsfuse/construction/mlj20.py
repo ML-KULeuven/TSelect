@@ -79,7 +79,7 @@ class TSFuseExtractor(TransformerMixin):
                 self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y, metadata)
                 self.set_subset_selected_series(self.series_filter.selected_channels)
                 metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                print("           Number of fused signals: ", len(self.series_))
+                print("           Number of selected signals: ", len(self.series_))
 
             print("     Series to attributes")
             self.series_to_attributes(data, metadata)
