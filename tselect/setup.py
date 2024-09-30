@@ -16,9 +16,8 @@ setup(
         'matplotlib>=3.7.3',
         'pandas>=1.5.3',
         'pycatch22>=0.4.2',
-        'scikit_learn>=1.1.3',
+        'scikit_learn',
         'sktime>=0.23.1',
-        'Deprecated~=1.2.14',
         'scipy~=1.10.1',
     ],
     ext_modules=cythonize([
