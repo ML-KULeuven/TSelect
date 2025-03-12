@@ -237,7 +237,8 @@ class FusionFilter(TransformerMixin):
                     X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.selected_channels}
                 if self.series_fusion:
                     self.tsfuse_extractor.set_subset_selected_series(self.series_filter.selected_channels)
-                metadata[Keys.time_series_filtering].append(time.process_time() - start)
+                if metadata is not None:
+                    metadata[Keys.time_series_filtering].append(time.process_time() - start)
                 print("         Number of series after filtering: ", len(self.series_filter.selected_channels))
                 print("         Total filtering time: ", time.process_time() - start)
 
