@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "tselect"
-version = "0.1.1"
+name = "TSelect"
+version = "0.1.2"
 description = "Package for selecting the relevant and non-redundant signals for multivariate time series classification."
 authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>",
            "Arne De Brabandere"]
