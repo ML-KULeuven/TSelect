@@ -5,13 +5,13 @@ from typing import Union, Dict
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from tselect.channel_selectors.tselect import TSelect
-from tselect.utils import *
-from tselect.utils.constants import SEED, Keys
-from tselect.utils.scaler import MinMaxScaler3D
-from tsfuse.computation import Input
-from tsfuse.construction.mlj20 import TSFuseExtractor
-from tsfuse.data import dict_collection_to_pd_multiindex, Collection, pd_multiindex_to_dict_collection
+from TSelect.tselect.tselect.channel_selectors.tselect import TSelect
+from TSelect.tselect.tselect.utils import *
+from TSelect.tselect.tselect.utils.constants import SEED, Keys
+from TSelect.tselect.tselect.utils.scaler import MinMaxScaler3D
+from TSelect.tsfuse.tsfuse.computation import Input
+from TSelect.tsfuse.tsfuse.construction.mlj20 import TSFuseExtractor
+from TSelect.tsfuse.tsfuse.data import dict_collection_to_pd_multiindex, Collection, pd_multiindex_to_dict_collection
 
 
 class FusionFilter(TransformerMixin):
@@ -94,7 +94,7 @@ class FusionFilter(TransformerMixin):
 
     def __init_filter__(self):
         self.series_filter = TSelect(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                                     random_state=SEED, auc_percentage=self.auc_percentage,
+                                     random_state=SEED, irrelevant_selector_percentage=self.auc_percentage,
                                      filtering_threshold_corr=self.corr_threshold,
                                      filtering_test_size=self.test_size) if self.series_filtering else None
 

@@ -1,6 +1,6 @@
 from graphviz import Graph
 
-from tsfuse.errors import InvalidTagError
+from TSelect.tsfuse.tsfuse.errors import InvalidTagError
 
 __all__ = [
     'Tags',
@@ -32,7 +32,7 @@ class Tags(object):
 
     Examples
     --------
-    >>> from tsfuse.data import Tags, TagKey
+    >>> from TSelect.tsfuse.tsfuse.data import Tags, TagKey
     >>> tags = Tags({TagKey.QUANTITY: 'acceleration'})
     """
 
@@ -258,7 +258,7 @@ class HierarchicalTagKey(TagKey):
 
     Examples
     --------
-    >>> from tsfuse.data import HierarchicalTagKey
+    >>> from TSelect.tsfuse.tsfuse.data import HierarchicalTagKey
     >>> name = "location"
     >>> lattice = (('hand', 'body'), ('left', 'body'), ('hand_left', 'hand'), ('hand_left', 'left'))
     >>> location_tag_key = HierarchicalTagKey(name, lattice)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from tsfuse.data.units import units
+from TSelect.tsfuse.tsfuse.data.units import units
 from ..computation import Transformer, Graph
 from .mathematics import Sum, ArcCos
 from .util import apply_to_axis

@@ -9,23 +9,22 @@ import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from tselect.utils.constants import SEED
-from tselect.utils import *
+from TSelect.tselect.tselect.utils.constants import SEED
+from TSelect.tselect.tselect.utils import *
+from TSelect.tselect.tselect.utils.metrics import auroc_score
 
-from tsfuse.data import Collection
-from tsfuse.transformers import SinglePassStatistics
-from tsfuse.utils import encode_onehot
-from tselect.rank_correlation.rank_correlation import *
+from TSelect.tsfuse.tsfuse.data import Collection
+from TSelect.tsfuse.tsfuse.transformers import SinglePassStatistics
+from TSelect.tselect.tselect.rank_correlation.rank_correlation import *
 
 
 class TSelect(TransformerMixin):
     """
     A class for selecting a relevant and non-redundant set of signals.
-    Filtering is done in two steps: first, irrelevant series are filtered out based on their AUC score. Second,
+    Filtering is done in two steps: first, irrelevant series are removed based on individually evaluating each channel. Second,
     redundant series are filtered out based on their rank correlation. The rank correlation is computed using the
     Spearman rank correlation.
     """
@@ -33,9 +32,11 @@ class TSelect(TransformerMixin):
     def __init__(self,
                  irrelevant_filter=True,
                  redundant_filter=True,
+                 evaluation_metric=auroc_score,
+                 higher_is_better=True,
                  random_state: int = SEED,
-                 filtering_threshold_auc: float = 0.5,
-                 auc_percentage: float = 0.75,
+                 irrelevant_selector_threshold: float = 0.5,
+                 irrelevant_selector_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
                  multiple_model_weighing: bool = False,
                  irrelevant_better_than_random: bool = False,
@@ -46,17 +47,24 @@ class TSelect(TransformerMixin):
         Parameters
         ----------
         irrelevant_filter: bool, default=True
-            Whether to filter out irrelevant series based on their AUC score
+            Whether to remove irrelevant channels based on their individual evaluation
         redundant_filter: bool, default=True
             Whether to filter out redundant series based on their rank correlation
+        evaluation_metric: callable, default=roc_score
+            The evaluation metric to estimate the relevance of each channel. The evaluation metric should be a callable
+            that takes the true labels and the predicted probabilities as input and returns a float.
+            The default evaluation metric is the ROC AUC score.
+        higher_is_better: bool, default=True
+            Whether a higher value of the evaluation metric indicates a better performance.
         random_state: int, default=SEED
             The random state used throughout the class.
-        filtering_threshold_auc: float, default=0.5
-            The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
-            threshold are removed.
-        auc_percentage: float, default=0.6
-            The percentage of series to keep based on their AUC score. This parameter is only used if
-            irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
+        irrelevant_selector_threshold: float, default=0.5
+            The threshold to use for removing irrelevant channels based on their individual evaluation by computing the
+            given metric. All signals worse this threshold are removed.
+        irrelevant_selector_percentage: float, default=0.6
+            The percentage of series to keep based  on their individual evaluation by computing the
+            given metric. This parameter is only used if irrelevant_filter=True. If irrelevant_selector_percentage=0.6,
+            the 60% channels with the best score are kept.
         filtering_threshold_corr: float, default=0.7
              The threshold used for clustering rank correlations. All predictions with a rank correlation above this
              threshold are considered correlated.
@@ -64,32 +72,34 @@ class TSelect(TransformerMixin):
             Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
             target. If the channel performs Better Than Random (BTR), it is kept.
         filtering_test_size: float, default=None
-            The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
-            percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-            If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
-            instances.
+            The test size to use for removing irrelevant series based on their individual evaluation by computing the
+            given metric. The test size is the percentage of the data that is used for computing the score.
+            The remaining data is used for training. If None, the train size is derived from
+            max(100, 0.25*nb_instances). The test size are then the remaining instances.
         """
         self.irrelevant_filter = irrelevant_filter
         self.redundant_filter = redundant_filter
+        self.evaluation_metric = evaluation_metric
+        self.higher_is_better = higher_is_better
         self.random_state = random_state
-        self.filtering_threshold_auc = filtering_threshold_auc
+        self.irrelevant_threshold = irrelevant_selector_threshold
         self.filtering_threshold_corr = filtering_threshold_corr
-        self.removed_series_auc = set()
+        self.removed_series_too_low_metric = set()
         self.removed_series_corr = set()
         self.acc_col = {}
-        self.auc_col = {}
+        self.evaluation_metric_per_channel = {}
         self.test_size = filtering_test_size
         self.clusters = None
         self.rank_correlation = None
         self.selected_channels = None
         self.selected_col_nb = None
-        self._sorted_auc: Optional[List[Union[str, int]]] = None
-        self.auc_percentage = auc_percentage
+        self._sorted_scores: Optional[List[Union[str, int]]] = None
+        self.irrelevant_selector_keep_best_x = irrelevant_selector_percentage
         self.multiple_models_weighing = multiple_model_weighing
         self.irrelevant_better_than_random = irrelevant_better_than_random
         self.features = None
-        self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
-                            "Removing uninformative signals": 0, "Computing ranks": 0, "Multiple models weighing": 0}
+        self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing evaluation metric": 0, "Predictions": 0,
+                            "Removing irrelevant channels": 0, "Computing ranks": 0, "Multiple models weighing": 0}
         self.scaler = None
         self.columns = None
         self.map_columns_np = None
@@ -97,8 +107,8 @@ class TSelect(TransformerMixin):
         self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
         self.print_times = print_times
 
-    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]) \
-            -> Union[pd.DataFrame, Dict[Union[str, int], Collection]]:
+    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray]) \
+            -> Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray]:
         """
         Transform the data to the selected series.
 
@@ -114,10 +124,12 @@ class TSelect(TransformerMixin):
         """
         if isinstance(X, pd.DataFrame):
             return X[self.selected_channels]
+        elif isinstance(X, np.ndarray):
+            return X[:, :, [self.map_columns_np[col] for col in self.selected_channels]]
         elif isinstance(X, dict):
             return {k: v for k, v in X.items() if k in self.selected_channels}
 
-    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]], y, metadata=None, force=False) -> None:
+    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray], y, metadata=None, force=False) -> None:
         """
         Fit the filter to the data.
 
@@ -144,6 +156,11 @@ class TSelect(TransformerMixin):
             self.columns = X.columns
             self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
             self.index = X.index
+        elif isinstance(X, np.ndarray):
+            X_np = self.preprocessing(X.transpose(0, 2, 1))
+            self.columns = list(range(X.shape[2]))
+            self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
+            self.index = range(X.shape[0])
         elif isinstance(X, dict):
             X_tsfuse = self.preprocessing_dict(X)
             self.columns = list(X.keys())
@@ -151,20 +168,19 @@ class TSelect(TransformerMixin):
 
         if self.selected_channels is not None and not force:
             return None
-        ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y)
+        ranks, best_removed_score = self.train_models(X_np, X_tsfuse, y)
 
         if self.irrelevant_filter and not self.irrelevant_better_than_random:
             start = time.process_time()
-            ranks_filtered = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
+            ranks_filtered = self.irrelevant_selector_percentage(data_to_filter=ranks, p=self.irrelevant_selector_keep_best_x)
 
             if len(ranks_filtered) == 0:
                 # The unfiltered ranks will be kept.
-                warnings.warn(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
-                              f" was {highest_removed_auc}. For this run, all signals that passed the absolute AUC "
-                              f"threshold are kept.")
+                warnings.warn(f"No series passed the threshold in the irrelevant selector, please make the threshold "
+                              f"less strict. The best removed score was {best_removed_score}. For this run, all signals "
+                                f"that passed the absolute threshold are kept.")
 
             elif len(ranks_filtered) == 1 and self.redundant_filter:
-                # print("     Only one series passed the AUC filtering, no need to compute rank correlations")
                 self.rank_correlation = dict()
                 self.clusters = [list(ranks_filtered.keys())]
                 self.selected_channels = list(ranks_filtered.keys())
@@ -173,7 +189,7 @@ class TSelect(TransformerMixin):
             else:
                 ranks = ranks_filtered
             if self.print_times:
-                print("         Time AUC filtering: ", time.process_time() - start)
+                print("         Time irrelevant selector: ", time.process_time() - start)
 
         if self.redundant_filter:
             self.redundant_filtering(ranks)
@@ -183,7 +199,7 @@ class TSelect(TransformerMixin):
         self.update_metadata(metadata)
         return None
 
-    def preprocessing(self, X: pd.DataFrame) -> np.ndarray:
+    def preprocessing(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """
         Preprocess the data before fitting the filter.
 
@@ -198,7 +214,7 @@ class TSelect(TransformerMixin):
             The preprocessed data
 
         """
-        from tselect import MinMaxScaler3D
+        from TSelect.tselect.tselect import MinMaxScaler3D
         self.scaler = MinMaxScaler3D()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -222,7 +238,7 @@ class TSelect(TransformerMixin):
             The preprocessed data in TSFuse format
 
         """
-        from tselect.utils.scaler import MinMaxScalerCollections
+        from TSelect.tselect.tselect.utils.scaler import MinMaxScalerCollections
         self.scaler = MinMaxScalerCollections()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -232,9 +248,9 @@ class TSelect(TransformerMixin):
                 ffill_nan(scaled_X[key].values, inplace=True)
         return scaled_X
 
-    def train_models(self, X_np, X_tsfuse, y: pd.Series) -> (dict, float):
+    def train_models(self, X_np, X_tsfuse, y: Union[pd.Series, np.ndarray]) -> (dict, float):
         """
-        Train the models for each dimension and compute the AUC score for each dimension.
+        Train the models for each dimension and compute the given metric score for each dimension.
 
         Parameters
         ----------
@@ -250,7 +266,7 @@ class TSelect(TransformerMixin):
         dict
             A dictionary with the ranks for each dimension
         float
-            The highest AUC score that was removed because it was below the AUC threshold
+            The best score that was removed because it was below the given threshold
         """
         start = time.process_time()
         if X_np is None:
@@ -261,8 +277,11 @@ class TSelect(TransformerMixin):
             tsfuse_format = False
         ranks = {}
         train_ix, test_ix = self.train_test_split(X)
-        y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
-        highest_removed_auc = 0
+        if isinstance(y, pd.Series):
+            y = y.values
+        y_train, y_test = y[train_ix], y[test_ix]
+        # y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
+        best_removed_score = 0
         predictions_removed_signals = {}
         all_features = {}
 
@@ -286,41 +305,42 @@ class TSelect(TransformerMixin):
             predict_proba = clf.predict_proba(features_test)
             if np.unique(y_test).shape[0] != predict_proba.shape[1]:
                 raise ValueError("Not all classes are present in the test set, increase the test size to be able to "
-                                 "compute the AUC")
+                                 "evaluate individual channels")
             self.times["Predictions"] += time.process_time() - start2
 
             start2 = time.process_time()
-            auc_col = roc_auc_score(encode_onehot(y_test), predict_proba)
-            self.times["Computing AUC"] += time.process_time() - start2
+            score = self.evaluation_metric(y_test, predict_proba)
+            self.times["Computing evaluation metric"] += time.process_time() - start2
 
             all_features[col] = {'train': features_train, 'test': features_test}
             start2 = time.process_time()
             if self.irrelevant_filter:
                 if self.irrelevant_better_than_random:
-                    to_keep = self.irrelevant_selector_random(features_train, features_test, y_train, y_test, auc_col)
+                    to_keep = self.irrelevant_selector_random(features_train, features_test, y_train, y_test, score)
                 else:
-                    # Test AUC series high enough
-                    to_keep = not (auc_col < self.filtering_threshold_auc)
+                    # Test evaluation score high enough
+                    to_keep = not (score < self.irrelevant_threshold) if self.higher_is_better \
+                        else not (score > self.irrelevant_threshold)
                 if not to_keep:
-                    self.removed_series_auc.add((col, auc_col))
+                    self.removed_series_too_low_metric.add((col, score))
                     predictions_removed_signals[col] = predict_proba
-                    if auc_col > highest_removed_auc:
-                        highest_removed_auc = auc_col
+                    if score > best_removed_score if self.higher_is_better else score < best_removed_score:
+                        best_removed_score = score
                     continue
-            self.times["Removing uninformative signals"] += time.process_time() - start2
-            self.auc_col[col] = auc_col
+            self.times["Removing irrelevant channels"] += time.process_time() - start2
+            self.evaluation_metric_per_channel[col] = score
 
             start2 = time.process_time()
             ranks[col] = probabilities2rank(predict_proba)
             self.times["Computing ranks"] += time.process_time() - start2
 
-        # If no series passed the AUC threshold filtering, keep all series for now
+        # If no series passed the threshold filtering, keep all series for now
         if len(ranks) == 0:
-            warnings.warn(f"No series passed the AUC filtering, please decrease the threshold. The highest AUC"
-                          f" was {highest_removed_auc}. For this run, no series below the absolute AUC threshold "
+            warnings.warn(f"No series passed the absolute threshold, please make the threshold less strict. The best score"
+                          f" was {best_removed_score}. For this run, no series worse than the absolute threshold "
                           f"(default=0.5) were removed.")
-            for col, auc in self.removed_series_auc:
-                self.auc_col[col] = auc
+            for col, score in self.removed_series_too_low_metric:
+                self.evaluation_metric_per_channel[col] = score
                 start2 = time.process_time()
                 ranks[col] = probabilities2rank(predictions_removed_signals[col])
                 self.times["Computing ranks"] += time.process_time() - start2
@@ -333,15 +353,15 @@ class TSelect(TransformerMixin):
             self.times["Multiple models weighing"] += time.process_time() - start2
 
         if self.print_times:
-            print("         Total: Time AUC per series: ", time.process_time() - start)
+            print("         Total: Time evaluating each channel: ", time.process_time() - start)
             print("             | Time extracting features: ", self.times["Extracting features"])
             print("             | Time training model: ", self.times["Training model"])
             print("             | Time predictions: ", self.times["Predictions"])
-            print("             | Time computing AUC: ", self.times["Computing AUC"])
-            print("             | Time removing uninformative signals: ", self.times["Removing uninformative signals"])
+            print("             | Time computing evaluation metric: ", self.times["Computing evaluation metric"])
+            print("             | Time removing uninformative signals: ", self.times["Removing irrelevant channels"])
             print("             | Time computing ranks: ", self.times["Computing ranks"])
             print("             | Time computing multiple models: ", self.times["Multiple models weighing"])
-        return ranks, highest_removed_auc
+        return ranks, best_removed_score
 
     def redundant_filtering(self, ranks: dict):
         """
@@ -374,9 +394,9 @@ class TSelect(TransformerMixin):
         """
         if metadata:
             metadata[Keys.series_filtering][Keys.acc_score].append(self.acc_col)
-            metadata[Keys.series_filtering][Keys.auc_score].append(self.auc_col)
+            metadata[Keys.series_filtering][Keys.score_per_channel].append(self.evaluation_metric_per_channel)
             metadata[Keys.series_filtering][Keys.rank_correlation].append(self.rank_correlation)
-            metadata[Keys.series_filtering][Keys.removed_series_auc].append(self.removed_series_auc)
+            metadata[Keys.series_filtering][Keys.removed_series_irrelevant].append(self.removed_series_too_low_metric)
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
@@ -490,7 +510,7 @@ class TSelect(TransformerMixin):
 
     def choose_from_clusters(self) -> list:
         """
-        Choose the series to keep from the clusters. From each cluster, the series with the highest AUC score is kept.
+        Choose the series to keep from the clusters. From each cluster, the series with the best metric score is kept.
 
         Returns
         -------
@@ -500,34 +520,34 @@ class TSelect(TransformerMixin):
         chosen = []
         for cluster in self.clusters:
             cluster = list(cluster)
-            all_auc = itemgetter(*cluster)(self.auc_col)
-            max_ix = np.argmax(all_auc)
+            all_scores = itemgetter(*cluster)(self.evaluation_metric_per_channel)
+            max_ix = np.argmax(all_scores)
             chosen.append(cluster[max_ix])
             self.removed_series_corr.update(set(cluster[:max_ix] + cluster[max_ix + 1:]))
         return chosen
 
     @property
-    def sorted_auc(self) -> list:
+    def sorted_scores(self) -> list:
         """
-        Return the series sorted by their AUC score.
+        Return the series sorted by their metric score.
 
         Returns
         -------
         list
-            The series sorted by their AUC score.
+            The series sorted by their metric score.
         """
-        if self._sorted_auc is None:
-            self._sorted_auc = sorted(self.auc_col, key=lambda k: self.auc_col[k], reverse=True)
-        return self._sorted_auc
+        if self._sorted_scores is None:
+            self._sorted_scores = sorted(self.evaluation_metric_per_channel, key=lambda k: self.evaluation_metric_per_channel[k], reverse=True if self.higher_is_better else False)
+        return self._sorted_scores
 
-    def filter_auc_percentage(self, p: float = 0.75, data_to_filter: dict = None) -> Optional[dict]:
+    def irrelevant_selector_percentage(self, p: float = 0.75, data_to_filter: dict = None) -> Optional[dict]:
         """
-        Filter out the series with the lowest AUC score. The percentage of series to keep equals p.
+        Remove the channels with the worst score. The percentage of series to keep equals p.
 
         Parameters
         ----------
         p: float, default=0.75
-            The percentage of series to keep. If p=0.75, the 75% series with the highest AUC score are kept.
+            The percentage of series to keep. If p=0.75, the 75% series with the best score are kept.
         data_to_filter: dict, default=None
             The data to filter. If None, the data is not filtered.
 
@@ -537,36 +557,35 @@ class TSelect(TransformerMixin):
             The filtered data
         """
         assert 0 <= p <= 1
-        print("     AUC percentage: ", p)
 
-        i = len(self.auc_col.keys()) - ceil(len(self.auc_col.keys()) * p)  # how many items should be removed
+        i = len(self.evaluation_metric_per_channel.keys()) - ceil(len(self.evaluation_metric_per_channel.keys()) * p)  # how many items should be removed
         if i == 0:
             return data_to_filter
-        threshold = self.auc_col[self.sorted_auc[-i]]  # the AUC threshold below which we will delete items
-        self.filter_auc_threshold(threshold)
+        threshold = self.evaluation_metric_per_channel[self.sorted_scores[-i]]  # the threshold below which we will delete items
+        self.irrelevant_selector_threshold(threshold)
         if data_to_filter is not None:
-            return {k: data_to_filter[k] for k in self.sorted_auc if k in data_to_filter.keys()}
+            return {k: data_to_filter[k] for k in self.sorted_scores if k in data_to_filter.keys()}
         return None
 
-    def filter_auc_threshold(self, threshold) -> None:
+    def irrelevant_selector_threshold(self, threshold) -> None:
         """
-        Filter out the series with an AUC score below the threshold.
+        Remove the channels with a score below the threshold.
 
         Parameters
         ----------
         threshold: float
-            The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
+            The threshold used for removing irrelevant series based on their score. All signals below this
             threshold are removed.
         """
-        if self.auc_col[self.sorted_auc[-1]] > threshold:
+        if self.evaluation_metric_per_channel[self.sorted_scores[-1]] > threshold if self.higher_is_better else self.evaluation_metric_per_channel[self.sorted_scores[-1]] < threshold:
             return
-        i = len(self.sorted_auc) - 1
-        for i in range(len(self.sorted_auc) - 1, -1, -1):
-            if self.auc_col[self.sorted_auc[i]] > threshold:
+        i = len(self.sorted_scores) - 1
+        for i in range(len(self.sorted_scores) - 1, -1, -1):
+            if self.evaluation_metric_per_channel[self.sorted_scores[i]] > threshold if self.higher_is_better else self.evaluation_metric_per_channel[self.sorted_scores[i]] < threshold:
                 break
-            self.removed_series_auc.add((self.sorted_auc[i], self.auc_col[self.sorted_auc[i]]))
-        self._sorted_auc = self.sorted_auc[:i + 1]
-        self.auc_col = {k: self.auc_col[k] for k in self.sorted_auc}
+            self.removed_series_too_low_metric.add((self.sorted_scores[i], self.evaluation_metric_per_channel[self.sorted_scores[i]]))
+        self._sorted_scores = self.sorted_scores[:i + 1]
+        self.evaluation_metric_per_channel = {k: self.evaluation_metric_per_channel[k] for k in self.sorted_scores}
 
     def irrelevant_selector_multiple_models(self, group_sizes: List[float], group_amounts: List[int],
                                             features_channel: Dict[str, Dict[str, np.ndarray]], y_train: pd.Series,
@@ -575,8 +594,8 @@ class TSelect(TransformerMixin):
         groups = self.make_groups_multiple_models(group_amounts, group_sizes)
 
         # Train a model on each of the groups
-        ind_scores = {ch: [] for ch in self.auc_col.keys()}
-        nb_features_per_channel = features_channel[list(self.auc_col.keys())[0]]["train"].shape[1]
+        ind_scores = {ch: [] for ch in self.evaluation_metric_per_channel.keys()}
+        nb_features_per_channel = features_channel[list(self.evaluation_metric_per_channel.keys())[0]]["train"].shape[1]
         for big_group in groups:
             for group in big_group:
                 model = LogisticRegression(random_state=self.random_state, penalty='l1', solver='saga')
@@ -586,23 +605,23 @@ class TSelect(TransformerMixin):
 
                 features_test = np.concatenate([features_channel[channel]["test"] for channel in group], axis=1)
                 predictions = model.predict_proba(features_test)
-                auc = roc_auc_score(encode_onehot(y_test), predictions)
+                score = self.evaluation_metric(y_test, predictions)
                 importances = np.max(np.abs(model.coef_), axis=0)
                 importances = importances / (np.max(importances) - np.min(importances))
                 for channel_index, channel in enumerate(group):
                     channel_importance = np.max(importances[channel_index * nb_features_per_channel:
                                                             (channel_index + 1) * nb_features_per_channel])
-                    ind_scores[channel].append(auc * channel_importance)
+                    ind_scores[channel].append(score * channel_importance)
 
         # Weigh the individual score with the group score
-        for channel in self.auc_col.keys():
+        for channel in self.evaluation_metric_per_channel.keys():
             if len(ind_scores[channel]) == 0:
                 continue
-            self.auc_col[channel] = (self.auc_col[channel] + np.mean(ind_scores[channel])) / 2
+            self.evaluation_metric_per_channel[channel] = (self.evaluation_metric_per_channel[channel] + np.mean(ind_scores[channel])) / 2
 
     def make_groups_multiple_models(self, group_amounts, group_sizes):
         assert len(group_sizes) == len(group_amounts)
-        all_channels = list(self.auc_col.keys())
+        all_channels = list(self.evaluation_metric_per_channel.keys())
         seed = SEED
         groups: List[List[list]] = []
         for i, size in enumerate(group_sizes):
@@ -630,10 +649,10 @@ class TSelect(TransformerMixin):
 
         return groups
 
-    def irrelevant_selector_random(self, features_train, features_test, y_train, y_test, reference_auc):
+    def irrelevant_selector_random(self, features_train, features_test, y_train, y_test, reference_score):
         """
-        For a single channel, train a model on a random permutation of the target variable and check if the AUC score is
-        below the reference AUC score. If it is, the channel is considered irrelevant and False is returned.
+        For a single channel, train a model on a random permutation of the target variable and check if the score is
+        below the reference score. If it is, the channel is considered irrelevant and False is returned.
         Parameters
         ----------
         features_train: np.ndarray
@@ -644,8 +663,8 @@ class TSelect(TransformerMixin):
             The target variable of the training set
         y_test: pd.Series
             The target variable of the test set
-        reference_auc:
-            The reference AUC score. This should be the ROCAUC of the unshuffled target variable.
+        reference_score:
+            The reference score. This should be the metric score of the unshuffled target variable.
 
         Returns
         -------
@@ -662,8 +681,7 @@ class TSelect(TransformerMixin):
         model = LogisticRegression(random_state=self.random_state)
         model.fit(features_train, y_train_random)
         predictions = model.predict_proba(features_test)
-        auc = roc_auc_score(encode_onehot(y_test), predictions)
-        # print(auc)
-        if auc > reference_auc:
-            print("Random was better with auc: ", auc, " compared to reference auc: ", reference_auc)
-        return auc < reference_auc
+        score = self.evaluation_metric(y_test, predictions)
+        if score > reference_score if self.higher_is_better else score < reference_score:
+            print("Random was better with score: ", score, " compared to reference score: ", reference_score)
+        return score < reference_score if self.higher_is_better else score > reference_score

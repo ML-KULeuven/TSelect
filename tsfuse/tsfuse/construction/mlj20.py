@@ -10,15 +10,15 @@ import numpy as np
 import pandas as pd
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
-from tsfuse.data import Collection
-from tsfuse.computation import Graph, Input
-from tsfuse.transformers import *
+from TSelect.tsfuse.tsfuse.data import Collection
+from TSelect.tsfuse.tsfuse.computation import Graph, Input
+from TSelect.tsfuse.tsfuse.transformers import *
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from sklearn.base import TransformerMixin
 
-from tselect.utils import Keys
+from TSelect.tselect.tselect.utils import Keys
 
 
 class TSFuseExtractor(TransformerMixin):

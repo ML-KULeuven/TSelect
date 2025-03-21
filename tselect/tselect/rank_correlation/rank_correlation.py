@@ -3,9 +3,9 @@ from typing import List, Union, Set
 import numpy as np
 from scipy.stats import permutation_test, spearmanr
 
-from tselect.utils import Keys
-from tselect.utils import average
-from tselect.rank_correlation.spearman import standard_deviation, spearman, spearman_distinct_ranks
+from TSelect.tselect.tselect.utils import Keys
+from TSelect.tselect.tselect.utils import average
+from TSelect.tselect.tselect.rank_correlation.spearman import standard_deviation, spearman, spearman_distinct_ranks
 
 
 def probabilities2rank(probabilities: np.ndarray) -> np.ndarray:

@@ -55,7 +55,7 @@ class Keys:
     average_pvalue_all = "average_pvalue_all"
     max_pvalue_all = "max_pvalue_all"
     min_pvalue_all = "min_pvalue_all"
-    removed_series_auc = "removed_series_auc"
+    removed_series_irrelevant = "removed_series_irrelevant"
     removed_series_corr = "removed_series_corr"
     series_filter = "series_filter"
     num_series_per_cluster = "num_series_per_cluster"
@@ -76,6 +76,7 @@ class Keys:
     average_ies_score = "average_ies_score"
     average_time_train = "average_time_train"
     average_time_predict = "average_time_predict"
+    score_per_channel = "score_per_channel"
     acc_score = 'accuracy_score'
     auc_score = 'roc_auc_score'
     ies_score = 'ies_score'

@@ -7,9 +7,9 @@ import pycatch22
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sktime.datatypes._panel._convert import from_multi_index_to_3d_numpy
 
-from tselect.utils.constants import Keys
+from TSelect.tselect.tselect.utils.constants import Keys
 
-from tsfuse.data import Collection
+from TSelect.tsfuse.tsfuse.data import Collection
 
 
 # \Section: Project general
@@ -492,8 +492,8 @@ def init_metadata():
                 Keys.fused_attr: [],
                 Keys.deleted_attr: [],
                 Keys.remaining_attr: [],
-                Keys.series_filtering: {Keys.acc_score: [], Keys.auc_score: [], Keys.rank_correlation: [],
-                                        Keys.removed_series_auc: [], Keys.removed_series_corr: [],
+                Keys.series_filtering: {Keys.acc_score: [], Keys.score_per_channel: [], Keys.rank_correlation: [],
+                                        Keys.removed_series_irrelevant: [], Keys.removed_series_corr: [],
                                         Keys.series_filter: []}}
 
     return metadata
@@ -525,7 +525,7 @@ def get_correct_formats(X: Union[pd.DataFrame, Dict[Union[str, int], Collection]
     X_pd: `X` in Pandas MultiIndex format
     X_tsfuse: `X` in TSFuse format
     """
-    from tsfuse.data import pd_multiindex_to_dict_collection, dict_collection_to_pd_multiindex
+    from TSelect.tsfuse.tsfuse.data import pd_multiindex_to_dict_collection, dict_collection_to_pd_multiindex
     if isinstance(X, pd.DataFrame):
         if reset_index:
             (_, t) = X.index.levshape
@@ -566,7 +566,7 @@ def get_correct_formats_numpy(X: Union[pd.DataFrame, Dict[Union[str, int], Colle
     X_np: `X` in numpy 3D array format
     X_tsfuse: `X` in TSFuse format
     """
-    from tsfuse.data import pd_multiindex_to_dict_collection, dict_collection_to_numpy3d
+    from TSelect.tsfuse.tsfuse.data import pd_multiindex_to_dict_collection, dict_collection_to_numpy3d
     if isinstance(X, pd.DataFrame):
         X_np = from_multi_index_to_3d_numpy(X)
         X_tsfuse = pd_multiindex_to_dict_collection(X, add_tags=add_tags, views=views)
@@ -598,7 +598,7 @@ def get_tsfuse_format(X: Union[pd.DataFrame, Dict[Union[str, int], Collection]],
     X_tsfuse: Dict[Union[str, int], Collection]
         `X` in TSFuse format
     """
-    from tsfuse.data import pd_multiindex_to_dict_collection
+    from TSelect.tsfuse.tsfuse.data import pd_multiindex_to_dict_collection
     if isinstance(X, pd.DataFrame):
         if views is None:
             views = X.columns
@@ -623,7 +623,7 @@ def get_tsfuse_format_np(X: Union[np.ndarray, Dict[Union[str, int], Collection]]
     X_tsfuse: Dict[Union[str, int], Collection]
         `X` in TSFuse format
     """
-    from tsfuse.data import numpy3d_to_dict_collection
+    from TSelect.tsfuse.tsfuse.data import numpy3d_to_dict_collection
     if isinstance(X, np.ndarray):
         views = list(range(X.shape[1]))
         views_ext = {v: [v] for v in views}
@@ -653,7 +653,7 @@ def get_multiindex_pd_format(X: Union[pd.DataFrame, Dict[Union[str, int], Collec
     ------
     X_pd: `X` in Pandas MultiIndex format
     """
-    from tsfuse.data import dict_collection_to_pd_multiindex
+    from TSelect.tsfuse.tsfuse.data import dict_collection_to_pd_multiindex
     if isinstance(X, pd.DataFrame):
         if reset_index:
             (_, t) = X.index.levshape
@@ -808,3 +808,4 @@ def replace_nans_by_col_mean(features):
     col_mean = np.nanmean(features, axis=0)
     inds = np.where(np.isnan(features))
     features[inds] = np.take(col_mean, inds[1])
+

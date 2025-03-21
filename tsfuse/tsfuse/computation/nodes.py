@@ -5,7 +5,7 @@ import inspect
 from functools import partial
 
 import numpy as np
-from tsfuse.data import Tags
+from TSelect.tsfuse.tsfuse.data import Tags
 
 from ..data import Collection
 from ..errors import InvalidPreconditionError
