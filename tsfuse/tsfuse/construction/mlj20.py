@@ -76,7 +76,8 @@ class TSFuseExtractor(TransformerMixin):
             if self.series_filter is not None:
                 print("     Filtering series")
                 start = time.process_time()
-                self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y, metadata)
+                self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y,
+                                       metadata=metadata)
                 self.set_subset_selected_series(self.series_filter.selected_channels)
                 metadata[Keys.time_series_filtering].append(time.process_time() - start)
                 print("           Number of selected signals: ", len(self.series_))

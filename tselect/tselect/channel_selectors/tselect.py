@@ -107,8 +107,7 @@ class TSelect(TransformerMixin):
         self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
         self.print_times = print_times
 
-    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray]) \
-            -> Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray]:
+    def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray]):
         """
         Transform the data to the selected series.
 
@@ -119,7 +118,7 @@ class TSelect(TransformerMixin):
 
         Returns
         -------
-        pd.DataFrame or Dict[Union[str, int], Collection]
+        pd.DataFrame, Dict[Union[str, int], Collection] or np.ndarray
             The transformed data in the same format as the input data.
         """
         if isinstance(X, pd.DataFrame):
@@ -129,16 +128,21 @@ class TSelect(TransformerMixin):
         elif isinstance(X, dict):
             return {k: v for k, v in X.items() if k in self.selected_channels}
 
-    def fit(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray], y, metadata=None, force=False) -> None:
+    def fit(self, X, y, X_val=None, y_val=None, metadata=None, force=False) -> None:
         """
         Fit the filter to the data.
 
         Parameters
         ----------
-        X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]
+        X: pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray
             The data to fit the filter to. Can be either a pandas DataFrame or a TSFuse Collection.
         y: pd.Series
             The target variable
+        X_val: Union[pd.DataFrame, Dict[Union[str, int], Collection], np.ndarray] or None
+            The validation data to fit the filter to. If provided, X_val should have the same type as X. If X_val is
+            None, the data is split into a training and test set.
+        y_val: pd.Series, np.ndarray, or None
+            The validation target variable. This is only used if X_val is not None.
         metadata: dict, default=None
             The metadata to update with the results of the filter. If no metadata is provided, no metadata is updated.
         force: bool
@@ -156,19 +160,29 @@ class TSelect(TransformerMixin):
             self.columns = X.columns
             self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
             self.index = X.index
+            if X_val is not None:
+                assert isinstance(X_val, pd.DataFrame)
+                X_val = self.preprocessing(X_val)
+
         elif isinstance(X, np.ndarray):
             X_np = self.preprocessing(X.transpose(0, 2, 1))
             self.columns = list(range(X.shape[2]))
             self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
             self.index = range(X.shape[0])
+            if X_val is not None:
+                assert isinstance(X_val, np.ndarray)
+                X_val = self.preprocessing(X_val)
         elif isinstance(X, dict):
             X_tsfuse = self.preprocessing_dict(X)
             self.columns = list(X.keys())
             self.index = X_tsfuse[self.columns[0]].index
+            if X_val is not None:
+                assert isinstance(X_val, dict)
+                X_val = self.preprocessing_dict(X_val)
 
         if self.selected_channels is not None and not force:
             return None
-        ranks, best_removed_score = self.train_models(X_np, X_tsfuse, y)
+        ranks, best_removed_score = self.train_models(X_np, X_tsfuse, y, X_val=X_val, y_val=y_val)
 
         if self.irrelevant_filter and not self.irrelevant_better_than_random:
             start = time.process_time()
@@ -248,7 +262,7 @@ class TSelect(TransformerMixin):
                 ffill_nan(scaled_X[key].values, inplace=True)
         return scaled_X
 
-    def train_models(self, X_np, X_tsfuse, y: Union[pd.Series, np.ndarray]) -> (dict, float):
+    def train_models(self, X_np, X_tsfuse, y: Union[pd.Series, np.ndarray], X_val=None, y_val=None) -> (dict, float):
         """
         Train the models for each dimension and compute the given metric score for each dimension.
 
@@ -260,6 +274,11 @@ class TSelect(TransformerMixin):
             The data to fit the filter to in TSFuse format.
         y: pd.Series
             The target variable
+        X_val: np.ndarray or None
+            The validation data to fit the filter to in the same format as X_np is it is not None or in the same format
+            as X_tsfuse if it is not None. If X_val is None, the data is split into a training and test set.
+        y_val: pd.Series, np.ndarray or None
+            The validation target variable. This is only used if X_val is not None.
 
         Returns
         -------
@@ -276,18 +295,24 @@ class TSelect(TransformerMixin):
             X = X_np
             tsfuse_format = False
         ranks = {}
-        train_ix, test_ix = self.train_test_split(X)
-        if isinstance(y, pd.Series):
-            y = y.values
-        y_train, y_test = y[train_ix], y[test_ix]
-        # y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
+        train_ix = None
+        test_ix = None
+        if X_val is None:
+            train_ix, test_ix = self.train_test_split(X)
+            if isinstance(y, pd.Series):
+                y = y.values
+            y_train, y_test = y[train_ix], y[test_ix]
+        else:
+            y_train = y.values if isinstance(y, pd.Series) else y
+            y_test = y_val.values if isinstance(y_val, pd.Series) else y_val
         best_removed_score = 0
         predictions_removed_signals = {}
         all_features = {}
 
         for i, col in enumerate(self.columns):
             start2 = time.process_time()
-            features_train, features_test = self.extract_features(X, col, train_ix, test_ix, i,
+            features_train, features_test = self.extract_features(X, col, i, train_ix=train_ix, test_ix=test_ix,
+                                                                    X_val=X_val,
                                                                   tsfuse_format=tsfuse_format)
             self.times["Extracting features"] += time.process_time() - start2
 
@@ -400,7 +425,8 @@ class TSelect(TransformerMixin):
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
-    def extract_features(self, X: Union[dict, np.ndarray], col, train_ix, test_ix, i, tsfuse_format=False) -> (
+    def extract_features(self, X: Union[dict, np.ndarray], col, i, train_ix=None, test_ix=None, X_val=None,
+                         tsfuse_format=False) -> (
             np.ndarray, np.ndarray):
         """
         Extract the features for a single dimension.
@@ -415,6 +441,8 @@ class TSelect(TransformerMixin):
             The indices of the training set
         test_ix: list
             The indices of the test set
+        X_val: 3D numpy array or dictionary of Collections
+            The validation set. If train_ix and test_ix are not provided, X_val should be provided.
         i: int
             The index of the dimension to extract the features from, needed for the raw or catch22 mode.
         tsfuse_format: bool, default=False
@@ -427,13 +455,26 @@ class TSelect(TransformerMixin):
         np.ndarray
             The features of the test set
         """
-        if not tsfuse_format:
-            X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+        if train_ix is not None and test_ix is not None:
+            if not tsfuse_format:
+                X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+            else:
+                X_i = X[col]
+            stats = SinglePassStatistics().transform(X_i).values[:, :, 0]
+            features_train = stats[train_ix, :]
+            features_test = stats[test_ix, :]
+        elif X_val is not None:
+            if not tsfuse_format:
+                X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+                X_val = Collection(X_val[:, i, :].reshape(X_val.shape[0], 1, X_val.shape[2]), from_numpy3d=True)
+            else:
+                X_i = X[col]
+                X_val = X_val[col]
+            features_train = SinglePassStatistics().transform(X_i).values[:, :, 0]
+            features_test = SinglePassStatistics().transform(X_val).values[:, :, 0]
         else:
-            X_i = X[col]
-        stats = SinglePassStatistics().transform(X_i).values[:, :, 0]
-        features_train = stats[train_ix, :]
-        features_test = stats[test_ix, :]
+            raise ValueError("Either X_val or train_ix and test_ix should be provided")
+
         # Drop all NaN columns
         if np.isnan(features_train).any():
             nan_cols = np.isnan(features_train).all(axis=0)

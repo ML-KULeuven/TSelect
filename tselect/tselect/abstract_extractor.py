@@ -1,6 +1,6 @@
 import time
 from abc import ABC, abstractmethod
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 import pandas as pd
 
@@ -156,7 +156,7 @@ class AbstractExtractor(ABC):
         -------
         None, but the model and filter should be fitted.
         """
-        X_pd = self.fusion_filter.fit(X, y, metadata, return_format='dataframe')
+        X_pd = self.fusion_filter.fit(X, y, metadata=metadata, return_format='dataframe')
 
         print("     Executing model")
         start = time.process_time()

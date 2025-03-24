@@ -188,7 +188,7 @@ class FusionFilter(TransformerMixin):
 
         Parameters
         ----------
-        X : Union[pd.DataFrame, Dict[Union[str, int], Collection]]
+        X : pd.DataFrame, Dict[Union[str, int], Collection]
             The data to fit in the MultiIndex Pandas format or the TSFuse format.
         y : pd.Series
             The target variable.
@@ -230,10 +230,10 @@ class FusionFilter(TransformerMixin):
                 print("     Filtering series")
                 start = time.process_time()
                 if X_tsfuse is None:
-                    self.series_filter.fit(X_pd, y, metadata)
+                    self.series_filter.fit(X_pd, y, metadata=metadata)
                     X_pd = X_pd[self.series_filter.selected_channels]
                 else:
-                    self.series_filter.fit(X_tsfuse, y, metadata)
+                    self.series_filter.fit(X_tsfuse, y, metadata=metadata)
                     X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.selected_channels}
                 if self.series_fusion:
                     self.tsfuse_extractor.set_subset_selected_series(self.series_filter.selected_channels)
