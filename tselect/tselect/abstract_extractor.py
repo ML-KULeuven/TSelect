@@ -1,6 +1,6 @@
 import time
 from abc import ABC, abstractmethod
-from typing import Union, Dict
+from typing import Union, Dict, Callable
 
 import pandas as pd
 
@@ -21,6 +21,7 @@ class AbstractExtractor(ABC):
                  auc_percentage: float = 0.75,
                  auc_threshold: float = 0.5,
                  corr_threshold: float = 0.7,
+                 feature_extractor: Callable =None,
                  test_size: float = None,
                  views: List[int] = None,
                  add_tags=lambda x: x,
@@ -73,6 +74,7 @@ class AbstractExtractor(ABC):
                                                         auc_percentage=auc_percentage,
                                                         auc_threshold=auc_threshold,
                                                         corr_threshold=corr_threshold,
+                                                        feature_extractor=feature_extractor,
                                                         test_size=test_size,
                                                         views=views,
                                                         add_tags=add_tags,

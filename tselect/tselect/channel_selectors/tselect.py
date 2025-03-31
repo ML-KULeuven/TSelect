@@ -37,6 +37,7 @@ class TSelect(TransformerMixin):
                  filtering_threshold_auc: float = 0.5,
                  auc_percentage: float = 0.75,
                  filtering_threshold_corr: float = 0.7,
+                 feature_extractor = None,
                  multiple_model_weighing: bool = False,
                  irrelevant_better_than_random: bool = False,
                  filtering_test_size: float = None,
@@ -96,6 +97,7 @@ class TSelect(TransformerMixin):
         self.index = None
         self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
         self.print_times = print_times
+        self.feature_extractor = feature_extractor
 
     def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]) \
             -> Union[pd.DataFrame, Dict[Union[str, int], Collection]]:
@@ -268,7 +270,7 @@ class TSelect(TransformerMixin):
 
         for i, col in enumerate(self.columns):
             start2 = time.process_time()
-            features_train, features_test = self.extract_features(X, col, train_ix, test_ix, i,
+            features_train, features_test = self.extract_features(X, col, train_ix, test_ix, i, y=y,
                                                                   tsfuse_format=tsfuse_format)
             self.times["Extracting features"] += time.process_time() - start2
 
@@ -380,7 +382,7 @@ class TSelect(TransformerMixin):
             metadata[Keys.series_filtering][Keys.removed_series_corr].append(self.removed_series_corr)
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
-    def extract_features(self, X: Union[dict, np.ndarray], col, train_ix, test_ix, i, tsfuse_format=False) -> (
+    def extract_features(self, X: Union[dict, np.ndarray], col, train_ix, test_ix, i, y=None, tsfuse_format=False) -> (
             np.ndarray, np.ndarray):
         """
         Extract the features for a single dimension.
@@ -407,13 +409,20 @@ class TSelect(TransformerMixin):
         np.ndarray
             The features of the test set
         """
-        if not tsfuse_format:
-            X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+        if self.feature_extractor is None:
+            if not tsfuse_format:
+                X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+            else:
+                X_i = X[col]
+            stats = SinglePassStatistics().transform(X_i).values[:, :, 0]
+            features_train = stats[train_ix, :]
+            features_test = stats[test_ix, :]
         else:
-            X_i = X[col]
-        stats = SinglePassStatistics().transform(X_i).values[:, :, 0]
-        features_train = stats[train_ix, :]
-        features_test = stats[test_ix, :]
+            if not tsfuse_format:
+                X_i = X[:, i, :]
+            else:
+                X_i = X[col].values
+            features_train, features_test = self.feature_extractor(X_i, train_ix, test_ix, y)
         # Drop all NaN columns
         if np.isnan(features_train).any():
             nan_cols = np.isnan(features_train).all(axis=0)

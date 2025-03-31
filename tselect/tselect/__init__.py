@@ -25,6 +25,7 @@ class FusionFilter(TransformerMixin):
                  auc_percentage: float = 0.75,
                  auc_threshold: float = 0.5,
                  corr_threshold: float = 0.7,
+                 feature_extractor=None,
                  test_size: float = None,
                  views: List[int] = None,
                  add_tags=lambda x: x,
@@ -78,6 +79,7 @@ class FusionFilter(TransformerMixin):
         self.auc_percentage = auc_percentage
         self.auc_threshold = auc_threshold
         self.corr_threshold = corr_threshold
+        self.feature_extractor = feature_extractor
         self.test_size = test_size
         self.views = views
         self.add_tags = add_tags
@@ -96,6 +98,7 @@ class FusionFilter(TransformerMixin):
         self.series_filter = TSelect(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
                                      random_state=SEED, auc_percentage=self.auc_percentage,
                                      filtering_threshold_corr=self.corr_threshold,
+                                     feature_extractor=self.feature_extractor,
                                      filtering_test_size=self.test_size) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
