@@ -1,7 +1,7 @@
 import contextlib
 import warnings
 import logging
-from typing import List
+from typing import List, Callable
 
 import pandas as pd
 from sklearn.base import TransformerMixin
@@ -18,6 +18,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
                  auc_percentage: float = 0.75,
                  auc_threshold: float = 0.5,
                  corr_threshold: float = 0.7,
+                 feature_extractor: Callable = None,
                  test_size: float = 0.2,
                  views: List[int] = None,
                  add_tags=lambda x: x,
@@ -65,7 +66,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
             The random state used throughout the class.
         """
         super().__init__(series_fusion, irrelevant_filter, redundant_filter, auc_percentage, auc_threshold,
-                         corr_threshold, test_size, views, add_tags, compatible, random_state)
+                         corr_threshold, feature_extractor, test_size, views, add_tags, compatible, random_state)
         self.tsfresh = TSFreshFeatureExtractor()
 
     def transform_model(self, X: pd.DataFrame):
