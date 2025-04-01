@@ -67,7 +67,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         """
         super().__init__(series_fusion, irrelevant_filter, redundant_filter, auc_percentage, auc_threshold,
                          corr_threshold, feature_extractor, test_size, views, add_tags, compatible, random_state)
-        self.tsfresh = TSFreshFeatureExtractor()
+        self.tsfresh = TSFreshFeatureExtractor(show_warnings=False)
 
     def transform_model(self, X: pd.DataFrame):
         """
