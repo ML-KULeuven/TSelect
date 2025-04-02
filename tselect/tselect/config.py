@@ -39,6 +39,7 @@ class Config:
                  auc_percentage: float = 0.6,
                  filtering_threshold_corr: float = 0.7,
                  feature_extractor = None,
+                 hierarchical_clustering = False,
                  multiple_model_weighing: bool = False,
                  irrelevant_better_than_random: bool = False,
                  filtering_test_size: float = None,
@@ -54,6 +55,7 @@ class Config:
         self.irrelevant_better_than_random = irrelevant_better_than_random
         self.print_times = print_times
         self.feature_extractor = feature_extractor
+        self.hierarchical_clustering = hierarchical_clustering
 
 def get_default_config() -> Config:
     """

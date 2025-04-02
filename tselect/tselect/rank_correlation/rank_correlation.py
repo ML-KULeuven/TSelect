@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List, Union, Set
 
 import numpy as np
@@ -611,3 +612,67 @@ def average_rank_corr_folds(rank_correlations: List[dict]) -> dict:
     result[Keys.min_correlation_all] = min(all_average_corrs)
 
     return result
+
+def cluster_correlations_agglo_hierarchical(rank_correlations: dict, included_series: Set = None,
+                                            correlation_threshold: float = 0.7) \
+        -> List[List[Union[str, int]]]:
+    """
+    Clusters the signals based on their rank correlations. Each cluster contains signals that are highly correlated to
+    each other.
+
+    Parameters
+    ----------
+    rank_correlations: dict
+        The rank correlations between the signals, with a tuple of the signals as key and the correlation as value
+    included_series: set, optional, default None
+        The set of series of which the rank computations were computed. If no set is given, the set of series is
+        assumed to be all series present in the rank_correlations dictionary.
+    correlation_threshold: float, optional, default 0.7
+        The threshold to use to determine if two signals are correlated.
+
+    Returns
+    -------
+    List[set]
+        A list of sets, where each set represents a cluster, containing the signals that are highly correlated to each
+        other.
+    """
+    import scipy.cluster.hierarchy as sch
+    import scipy.spatial.distance as ssd
+    if included_series is None:
+        included_series = set()
+        for (s1, s2) in rank_correlations.keys():
+            included_series.add(s1)
+            included_series.add(s2)
+
+    channels = sorted(included_series)  # Ensure a consistent order
+    channels_index = {ch: i for i, ch in enumerate(channels)}
+
+    # Initialize distance matrix
+    n = len(channels)
+    distance_matrix = np.ones((n, n))  # Start with 1s (max distance)
+
+    # Fill distance matrix using the correlation dictionary
+    for (ch1, ch2), corr in rank_correlations.items():
+        i, j = channels_index[ch1], channels_index[ch2]
+        dist = 1 - np.mean(np.abs(rank_correlations[(ch1, ch2)]))  # Convert correlation to distance
+        distance_matrix[i, j] = distance_matrix[j, i] = dist  # Symmetric
+
+    # Convert to condensed distance matrix format
+    condensed_dist_matrix = ssd.squareform(distance_matrix, checks=False)
+
+    # Perform hierarchical clustering
+    linkage_matrix = sch.linkage(condensed_dist_matrix, method='average')
+
+    # Convert correlation threshold to distance threshold
+    distance_threshold = 1 - correlation_threshold
+
+    # Get cluster labels
+    clusters = sch.fcluster(linkage_matrix, distance_threshold, criterion='distance')
+
+    # Group features by cluster
+    cluster_groups = defaultdict(list)
+    for i, feature in enumerate(channels):
+        cluster_groups[clusters[i]].append(feature)
+
+    # Convert to list of lists
+    return list(cluster_groups.values())

@@ -368,7 +368,11 @@ class TSelect(TransformerMixin):
         if self.config.print_times:
             print("         Time computing rank correlations: ", time.process_time() - start)
         start = time.process_time()
-        self.clusters = cluster_correlations(self.rank_correlation, included_series,
+        if self.config.hierarchical_clustering:
+            self.clusters = cluster_correlations_agglo_hierarchical(self.rank_correlation, included_series,
+                                                                    correlation_threshold=self.config.filtering_threshold_corr)
+        else:
+            self.clusters = cluster_correlations(self.rank_correlation, included_series,
                                              threshold=self.config.filtering_threshold_corr)
         if self.config.print_times:
             print("         Time clustering: ", time.process_time() - start)
