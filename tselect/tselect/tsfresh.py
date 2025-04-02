@@ -10,16 +10,19 @@ from sktime.transformations.panel.tsfresh import TSFreshFeatureExtractor
 from tselect import reset_first_level_index, SEED
 from tselect.abstract_extractor import AbstractExtractor
 
+from tselect.config import Config, get_default_config
+
 
 class TSFreshExtractor(AbstractExtractor, TransformerMixin):
     def __init__(self, series_fusion: bool = False,
-                 irrelevant_filter: bool = False,
-                 redundant_filter: bool = False,
-                 auc_percentage: float = 0.75,
-                 auc_threshold: float = 0.5,
-                 corr_threshold: float = 0.7,
-                 feature_extractor: Callable = None,
-                 test_size: float = 0.2,
+                 tselect_config: Config = get_default_config(),
+                 # irrelevant_filter: bool = False,
+                 # redundant_filter: bool = False,
+                 # auc_percentage: float = 0.75,
+                 # auc_threshold: float = 0.5,
+                 # corr_threshold: float = 0.7,
+                 # feature_extractor: Callable = None,
+                 # test_size: float = 0.2,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
@@ -65,8 +68,7 @@ class TSFreshExtractor(AbstractExtractor, TransformerMixin):
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
-        super().__init__(series_fusion, irrelevant_filter, redundant_filter, auc_percentage, auc_threshold,
-                         corr_threshold, feature_extractor, test_size, views, add_tags, compatible, random_state)
+        super().__init__(series_fusion, tselect_config, views, add_tags, compatible, random_state)
         self.tsfresh = TSFreshFeatureExtractor(show_warnings=False)
 
     def transform_model(self, X: pd.DataFrame):

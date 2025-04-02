@@ -9,6 +9,8 @@ from tselect.utils import *
 from tselect.utils.constants import SEED, Keys
 from tsfuse.data import Collection
 
+from tselect.config import Config, get_default_config
+
 
 class AbstractExtractor(ABC):
     """
@@ -16,13 +18,14 @@ class AbstractExtractor(ABC):
     """
 
     def __init__(self, series_fusion: bool = True,
-                 irrelevant_filter=True,
-                 redundant_filter=True,
-                 auc_percentage: float = 0.75,
-                 auc_threshold: float = 0.5,
-                 corr_threshold: float = 0.7,
-                 feature_extractor: Callable =None,
-                 test_size: float = None,
+                 tselect_config: Config = get_default_config(),
+                 # irrelevant_filter=True,
+                 # redundant_filter=True,
+                 # auc_percentage: float = 0.75,
+                 # auc_threshold: float = 0.5,
+                 # corr_threshold: float = 0.7,
+                 # feature_extractor: Callable =None,
+                 # test_size: float = None,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
@@ -69,13 +72,14 @@ class AbstractExtractor(ABC):
             The random state used throughout the class.
         """
         self.fusion_filter: FusionFilter = FusionFilter(series_fusion=series_fusion,
-                                                        irrelevant_filter=irrelevant_filter,
-                                                        redundant_filter=redundant_filter,
-                                                        auc_percentage=auc_percentage,
-                                                        auc_threshold=auc_threshold,
-                                                        corr_threshold=corr_threshold,
-                                                        feature_extractor=feature_extractor,
-                                                        test_size=test_size,
+                                                        tselect_config=tselect_config,
+                                                        # irrelevant_filter=irrelevant_filter,
+                                                        # redundant_filter=redundant_filter,
+                                                        # auc_percentage=auc_percentage,
+                                                        # auc_threshold=auc_threshold,
+                                                        # corr_threshold=corr_threshold,
+                                                        # feature_extractor=feature_extractor,
+                                                        # test_size=test_size,
                                                         views=views,
                                                         add_tags=add_tags,
                                                         compatible=compatible,

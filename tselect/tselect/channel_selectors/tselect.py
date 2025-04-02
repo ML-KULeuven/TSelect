@@ -1,9 +1,10 @@
+import copy
 import random
 import time
 import warnings
 from _operator import itemgetter
 from math import ceil
-from typing import Union, Dict
+from typing import Union, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,8 @@ from tsfuse.transformers import SinglePassStatistics
 from tsfuse.utils import encode_onehot
 from tselect.rank_correlation.rank_correlation import *
 
+from tselect.config import Config, get_default_config
+
 
 class TSelect(TransformerMixin):
     """
@@ -31,63 +34,67 @@ class TSelect(TransformerMixin):
     """
 
     def __init__(self,
-                 irrelevant_filter=True,
-                 redundant_filter=True,
-                 random_state: int = SEED,
-                 filtering_threshold_auc: float = 0.5,
-                 auc_percentage: float = 0.75,
-                 filtering_threshold_corr: float = 0.7,
-                 feature_extractor = None,
-                 multiple_model_weighing: bool = False,
-                 irrelevant_better_than_random: bool = False,
-                 filtering_test_size: float = None,
-                 print_times: bool = False
+                 config: Config = get_default_config(),
+                 # irrelevant_filter=True,
+                 # redundant_filter=True,
+                 # random_state: int = SEED,
+                 # filtering_threshold_auc: float = 0.5,
+                 # auc_percentage: float = 0.75,
+                 # filtering_threshold_corr: float = 0.7,
+                 # feature_extractor = None,
+                 # multiple_model_weighing: bool = False,
+                 # irrelevant_better_than_random: bool = False,
+                 # filtering_test_size: float = None,
+                 # print_times: bool = False
                  ):
         """
         Parameters
         ----------
-        irrelevant_filter: bool, default=True
-            Whether to filter out irrelevant series based on their AUC score
-        redundant_filter: bool, default=True
-            Whether to filter out redundant series based on their rank correlation
-        random_state: int, default=SEED
-            The random state used throughout the class.
-        filtering_threshold_auc: float, default=0.5
-            The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
-            threshold are removed.
-        auc_percentage: float, default=0.6
-            The percentage of series to keep based on their AUC score. This parameter is only used if
-            irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
-        filtering_threshold_corr: float, default=0.7
-             The threshold used for clustering rank correlations. All predictions with a rank correlation above this
-             threshold are considered correlated.
-        irrelevant_better_than_random: bool, default=False
-            Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
-            target. If the channel performs Better Than Random (BTR), it is kept.
-        filtering_test_size: float, default=None
-            The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
-            percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-            If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
-            instances.
+        config: Config
+            The configuration object that contains all hyperparameters for the TSelect channel selector:
+                - irrelevant_filter: bool, default=True
+                    Whether to filter out irrelevant series based on their AUC score
+                - redundant_filter: bool, default=True
+                    Whether to filter out redundant series based on their rank correlation
+                - random_state: int, default=SEED
+                    The random state used throughout the class.
+                - filtering_threshold_auc: float, default=0.5
+                    The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
+                    threshold are removed.
+                - auc_percentage: float, default=0.6
+                    The percentage of series to keep based on their AUC score. This parameter is only used if
+                    irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
+                - filtering_threshold_corr: float, default=0.7
+                     The threshold used for clustering rank correlations. All predictions with a rank correlation above this
+                     threshold are considered correlated.
+                - irrelevant_better_than_random: bool, default=False
+                    Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
+                    target. If the channel performs Better Than Random (BTR), it is kept.
+                - filtering_test_size: float, default=None
+                    The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
+                    percentage of the data that is used for computing the AUC score. The remaining data is used for training.
+                    If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
+                    instances.
         """
-        self.irrelevant_filter = irrelevant_filter
-        self.redundant_filter = redundant_filter
-        self.random_state = random_state
-        self.filtering_threshold_auc = filtering_threshold_auc
-        self.filtering_threshold_corr = filtering_threshold_corr
+        self.config = config
+        # self.irrelevant_filter = irrelevant_filter
+        # self.redundant_filter = redundant_filter
+        # self.random_state = random_state
+        # self.filtering_threshold_auc = filtering_threshold_auc
+        # self.filtering_threshold_corr = filtering_threshold_corr
         self.removed_series_auc = set()
         self.removed_series_corr = set()
         self.acc_col = {}
         self.auc_col = {}
-        self.test_size = filtering_test_size
+        # self.test_size = filtering_test_size
         self.clusters = None
         self.rank_correlation = None
         self.selected_channels = None
         self.selected_col_nb = None
         self._sorted_auc: Optional[List[Union[str, int]]] = None
-        self.auc_percentage = auc_percentage
-        self.multiple_models_weighing = multiple_model_weighing
-        self.irrelevant_better_than_random = irrelevant_better_than_random
+        # self.auc_percentage = auc_percentage
+        # self.multiple_models_weighing = multiple_model_weighing
+        # self.irrelevant_better_than_random = irrelevant_better_than_random
         self.features = None
         self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
                             "Removing uninformative signals": 0, "Computing ranks": 0, "Multiple models weighing": 0}
@@ -96,8 +103,8 @@ class TSelect(TransformerMixin):
         self.map_columns_np = None
         self.index = None
         self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
-        self.print_times = print_times
-        self.feature_extractor = feature_extractor
+        # self.print_times = print_times
+        # self.feature_extractor = feature_extractor
 
     def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]) \
             -> Union[pd.DataFrame, Dict[Union[str, int], Collection]]:
@@ -155,9 +162,9 @@ class TSelect(TransformerMixin):
             return None
         ranks, highest_removed_auc = self.train_models(X_np, X_tsfuse, y)
 
-        if self.irrelevant_filter and not self.irrelevant_better_than_random:
+        if self.config.irrelevant_filter and not self.config.irrelevant_better_than_random:
             start = time.process_time()
-            ranks_filtered = self.filter_auc_percentage(data_to_filter=ranks, p=self.auc_percentage)
+            ranks_filtered = self.filter_auc_percentage(data_to_filter=ranks, p=self.config.auc_percentage)
 
             if len(ranks_filtered) == 0:
                 # The unfiltered ranks will be kept.
@@ -165,7 +172,7 @@ class TSelect(TransformerMixin):
                               f" was {highest_removed_auc}. For this run, all signals that passed the absolute AUC "
                               f"threshold are kept.")
 
-            elif len(ranks_filtered) == 1 and self.redundant_filter:
+            elif len(ranks_filtered) == 1 and self.config.redundant_filter:
                 # print("     Only one series passed the AUC filtering, no need to compute rank correlations")
                 self.rank_correlation = dict()
                 self.clusters = [list(ranks_filtered.keys())]
@@ -174,10 +181,10 @@ class TSelect(TransformerMixin):
                 return None
             else:
                 ranks = ranks_filtered
-            if self.print_times:
+            if self.config.print_times:
                 print("         Time AUC filtering: ", time.process_time() - start)
 
-        if self.redundant_filter:
+        if self.config.redundant_filter:
             self.redundant_filtering(ranks)
         else:
             self.selected_channels = list(ranks.keys())
@@ -275,7 +282,7 @@ class TSelect(TransformerMixin):
             self.times["Extracting features"] += time.process_time() - start2
 
             start2 = time.process_time()
-            clf = LogisticRegression(random_state=self.random_state)
+            clf = LogisticRegression(random_state=self.config.random_state)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 clf.fit(features_train, y_train)
@@ -297,12 +304,12 @@ class TSelect(TransformerMixin):
 
             all_features[col] = {'train': features_train, 'test': features_test}
             start2 = time.process_time()
-            if self.irrelevant_filter:
-                if self.irrelevant_better_than_random:
+            if self.config.irrelevant_filter:
+                if self.config.irrelevant_better_than_random:
                     to_keep = self.irrelevant_selector_random(features_train, features_test, y_train, y_test, auc_col)
                 else:
                     # Test AUC series high enough
-                    to_keep = not (auc_col < self.filtering_threshold_auc)
+                    to_keep = not (auc_col < self.config.filtering_threshold_auc)
                 if not to_keep:
                     self.removed_series_auc.add((col, auc_col))
                     predictions_removed_signals[col] = predict_proba
@@ -328,13 +335,13 @@ class TSelect(TransformerMixin):
                 self.times["Computing ranks"] += time.process_time() - start2
 
         # Compute additional models if multiple model weighing is on
-        if self.multiple_models_weighing:
+        if self.config.multiple_models_weighing:
             start2 = time.process_time()
             self.irrelevant_selector_multiple_models([0.34, 0.5], [3, 2], all_features,
                                                      y_train, y_test)
             self.times["Multiple models weighing"] += time.process_time() - start2
 
-        if self.print_times:
+        if self.config.print_times:
             print("         Total: Time AUC per series: ", time.process_time() - start)
             print("             | Time extracting features: ", self.times["Extracting features"])
             print("             | Time training model: ", self.times["Training model"])
@@ -358,16 +365,16 @@ class TSelect(TransformerMixin):
         self.rank_correlation, included_series = \
             pairwise_rank_correlation_opt(ranks)
 
-        if self.print_times:
+        if self.config.print_times:
             print("         Time computing rank correlations: ", time.process_time() - start)
         start = time.process_time()
         self.clusters = cluster_correlations(self.rank_correlation, included_series,
-                                             threshold=self.filtering_threshold_corr)
-        if self.print_times:
+                                             threshold=self.config.filtering_threshold_corr)
+        if self.config.print_times:
             print("         Time clustering: ", time.process_time() - start)
         start = time.process_time()
         self.selected_channels = self.choose_from_clusters()
-        if self.print_times:
+        if self.config.print_times:
             print("         Time choose from cluster: ", time.process_time() - start)
 
     def update_metadata(self, metadata):
@@ -409,7 +416,7 @@ class TSelect(TransformerMixin):
         np.ndarray
             The features of the test set
         """
-        if self.feature_extractor is None:
+        if self.config.feature_extractor is None:
             if not tsfuse_format:
                 X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
             else:
@@ -422,7 +429,7 @@ class TSelect(TransformerMixin):
                 X_i = X[:, i, :]
             else:
                 X_i = X[col].values
-            features_train, features_test = self.feature_extractor(X_i, train_ix, test_ix, y)
+            features_train, features_test = self.config.feature_extractor(X_i, train_ix, test_ix, y)
         # Drop all NaN columns
         if np.isnan(features_train).any():
             nan_cols = np.isnan(features_train).all(axis=0)
@@ -466,11 +473,11 @@ class TSelect(TransformerMixin):
             nb_instances = X.shape[0]
         test_size = self.compute_test_size(nb_instances)
 
-        if self.print_times:
+        if self.config.print_times:
             print("         Test size: ", test_size)
         train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
                                                      test_size=test_size,
-                                                     random_state=self.random_state)
+                                                     random_state=self.config.random_state)
         return train_ix_all, test_ix_all
 
     def compute_test_size(self, nb_instances):
@@ -487,8 +494,8 @@ class TSelect(TransformerMixin):
         float
             The test size
         """
-        if self.test_size:
-            test_size = self.test_size
+        if self.config.test_size:
+            test_size = self.config.test_size
         elif nb_instances < 100:
             test_size = 0.25
         else:
@@ -588,7 +595,7 @@ class TSelect(TransformerMixin):
         nb_features_per_channel = features_channel[list(self.auc_col.keys())[0]]["train"].shape[1]
         for big_group in groups:
             for group in big_group:
-                model = LogisticRegression(random_state=self.random_state, penalty='l1', solver='saga')
+                model = LogisticRegression(random_state=self.config.random_state, penalty='l1', solver='saga')
                 features_train = np.concatenate([features_channel[channel]["train"] for channel in group], axis=1)
                 model.fit(features_train, y_train)
                 self.models["Models"][frozenset(group)] = model
@@ -663,12 +670,12 @@ class TSelect(TransformerMixin):
 
         """
         # Shuffle features train
-        np.random.seed(self.random_state)
+        np.random.seed(self.config.random_state)
         random_indices = np.random.permutation(y_train.shape[0])
         y_train_random = y_train.iloc[random_indices]
 
         # Train model
-        model = LogisticRegression(random_state=self.random_state)
+        model = LogisticRegression(random_state=self.config.random_state)
         model.fit(features_train, y_train_random)
         predictions = model.predict_proba(features_test)
         auc = roc_auc_score(encode_onehot(y_test), predictions)

@@ -373,15 +373,8 @@ def cluster_correlations(rank_correlations: dict, included_series: Set = None, t
                     unallocated_set.update(set(cluster2))
                     # print("Removed one cluster, there are now ", len(clusters), " clusters")
 
-    # result = []
-    # for c in clusters:
-    #     result.append(set(c))
-
     # Add unallocated series as separate clusters
     clusters.extend([[x] for x in unallocated_set])
-
-    # # check each included signal is allocated exactly once
-    # assert len([s for c in result for s in c]) == len(included_series)
 
     return clusters
 
