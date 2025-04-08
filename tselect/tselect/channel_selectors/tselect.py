@@ -34,18 +34,7 @@ class TSelect(TransformerMixin):
     """
 
     def __init__(self,
-                 config: Config = get_default_config(),
-                 # irrelevant_filter=True,
-                 # redundant_filter=True,
-                 # random_state: int = SEED,
-                 # filtering_threshold_auc: float = 0.5,
-                 # auc_percentage: float = 0.75,
-                 # filtering_threshold_corr: float = 0.7,
-                 # feature_extractor = None,
-                 # multiple_model_weighing: bool = False,
-                 # irrelevant_better_than_random: bool = False,
-                 # filtering_test_size: float = None,
-                 # print_times: bool = False
+                 config: Config = get_default_config()
                  ):
         """
         Parameters
@@ -77,24 +66,15 @@ class TSelect(TransformerMixin):
                     instances.
         """
         self.config = config
-        # self.irrelevant_filter = irrelevant_filter
-        # self.redundant_filter = redundant_filter
-        # self.random_state = random_state
-        # self.filtering_threshold_auc = filtering_threshold_auc
-        # self.filtering_threshold_corr = filtering_threshold_corr
         self.removed_series_auc = set()
         self.removed_series_corr = set()
         self.acc_col = {}
         self.auc_col = {}
-        # self.test_size = filtering_test_size
         self.clusters = None
         self.rank_correlation = None
         self.selected_channels = None
         self.selected_col_nb = None
         self._sorted_auc: Optional[List[Union[str, int]]] = None
-        # self.auc_percentage = auc_percentage
-        # self.multiple_models_weighing = multiple_model_weighing
-        # self.irrelevant_better_than_random = irrelevant_better_than_random
         self.features = None
         self.times: dict = {"Extracting features": 0, "Training model": 0, "Computing AUC": 0, "Predictions": 0,
                             "Removing uninformative signals": 0, "Computing ranks": 0, "Multiple models weighing": 0}
@@ -371,6 +351,9 @@ class TSelect(TransformerMixin):
         if self.config.hierarchical_clustering:
             self.clusters = cluster_correlations_agglo_hierarchical(self.rank_correlation, included_series,
                                                                     correlation_threshold=self.config.filtering_threshold_corr)
+        elif self.config.spectral_clustering:
+            self.clusters = cluster_correlations_spectral_clustering(self.rank_correlation, included_series,
+                                                                     random_state=self.config.random_state)
         else:
             self.clusters = cluster_correlations(self.rank_correlation, included_series,
                                              threshold=self.config.filtering_threshold_corr)

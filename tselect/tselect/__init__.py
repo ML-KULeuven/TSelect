@@ -23,13 +23,6 @@ class FusionFilter(TransformerMixin):
 
     def __init__(self, series_fusion: bool = True,
                  tselect_config: Config = get_default_config(),
-                 # irrelevant_filter=True,
-                 # redundant_filter=True,
-                 # auc_percentage: float = 0.75,
-                 # auc_threshold: float = 0.5,
-                 # corr_threshold: float = 0.7,
-                 # feature_extractor=None,
-                 # test_size: float = None,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
@@ -83,14 +76,7 @@ class FusionFilter(TransformerMixin):
         """
         self.series_fusion = series_fusion
         self.tselect_config = tselect_config
-        # self.irrelevant_filter = irrelevant_filter
-        # self.redundant_filter = redundant_filter
         self.series_filtering = self.tselect_config.irrelevant_filter or self.tselect_config.redundant_filter
-        # self.auc_percentage = auc_percentage
-        # self.auc_threshold = auc_threshold
-        # self.corr_threshold = corr_threshold
-        # self.feature_extractor = feature_extractor
-        # self.test_size = test_size
         self.views = views
         self.add_tags = add_tags
         self.compatible = compatible

@@ -40,6 +40,8 @@ class Config:
                  filtering_threshold_corr: float = 0.7,
                  feature_extractor = None,
                  hierarchical_clustering = False,
+                 spectral_clustering = False,
+                 n_clusters_spectral_clustering = None,
                  multiple_model_weighing: bool = False,
                  irrelevant_better_than_random: bool = False,
                  filtering_test_size: float = None,
@@ -56,6 +58,8 @@ class Config:
         self.print_times = print_times
         self.feature_extractor = feature_extractor
         self.hierarchical_clustering = hierarchical_clustering
+        self.spectral_clustering = spectral_clustering
+        self.n_clusters_spectral_clustering = n_clusters_spectral_clustering
 
 def get_default_config() -> Config:
     """

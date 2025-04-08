@@ -2,11 +2,16 @@ from collections import defaultdict
 from typing import List, Union, Set
 
 import numpy as np
+from scipy.linalg import eigh
 from scipy.stats import permutation_test, spearmanr
+from sklearn.cluster import SpectralClustering
+from sklearn.neighbors import NearestNeighbors
 
 from tselect.utils import Keys
 from tselect.utils import average
 from tselect.rank_correlation.spearman import standard_deviation, spearman, spearman_distinct_ranks
+
+from tselect.utils.constants import SEED
 
 
 def probabilities2rank(probabilities: np.ndarray) -> np.ndarray:
@@ -617,8 +622,8 @@ def cluster_correlations_agglo_hierarchical(rank_correlations: dict, included_se
                                             correlation_threshold: float = 0.7) \
         -> List[List[Union[str, int]]]:
     """
-    Clusters the signals based on their rank correlations. Each cluster contains signals that are highly correlated to
-    each other.
+    Clusters the signals based on their rank correlations using a hierarchical clustering algorithm.
+    Each cluster contains signals that are highly correlated to each other.
 
     Parameters
     ----------
@@ -676,3 +681,227 @@ def cluster_correlations_agglo_hierarchical(rank_correlations: dict, included_se
 
     # Convert to list of lists
     return list(cluster_groups.values())
+
+
+def cluster_correlations_spectral_clustering(rank_correlations: dict, included_series: Set = None, max_clusters=None,
+                                             k_nn=7, random_state=SEED) \
+        -> List[List[Union[str, int]]]:
+    """
+       Clusters the signals based on their rank correlations using a spectral clustering algorithm.
+       Each cluster contains signals that are highly correlated to each other.
+
+       Parameters
+       ----------
+       rank_correlations: dict
+           The rank correlations between the signals, with a tuple of the signals as key and the correlation as value
+       included_series: set, optional, default None
+           The set of series of which the rank computations were computed. If no set is given, the set of series is
+           assumed to be all series present in the rank_correlations dictionary.
+       n_clusters: int, optional, default 8
+            The number of clusters to form. If not specified, 8 clusters are formed.
+       random_state: int, optional, default SEED
+            The random state to use for the clustering algorithm. This is used to ensure reproducibility of the
+            clustering results.
+
+       Returns
+       -------
+       List[set]
+           A list of sets, where each set represents a cluster, containing the signals that are highly correlated to each
+           other.
+       """
+    from scipy.sparse.csgraph import laplacian as csgraph_laplacian
+    # Step 1: Extract all unique channels and index mapping
+    if included_series is None:
+        included_series = set()
+        for (s1, s2) in rank_correlations.keys():
+            included_series.add(s1)
+            included_series.add(s2)
+
+    channels = sorted(included_series)  # Ensure deterministic ordering
+    index_map = {feat: i for i, feat in enumerate(channels)}
+    n = len(channels)
+    if max_clusters is None:
+        max_clusters = n
+
+    # Step 2: Build distance matrix from correlation
+    # distance_matrix = np.ones((n, n))  # Start with max distance
+    # for (f1, f2), corr in rank_correlations.items():
+    #     i, j = channel_index[f1], channel_index[f2]
+    #     dist = 1 - corr  # Higher correlation = closer distance
+    #     distance_matrix[i, j] = distance_matrix[j, i] = dist
+
+    # Step 3: Compute local scaling parameters σᵢ using k-NN
+    # Step 2: Build distance matrix
+    distance_matrix = np.ones((n, n))
+    for (ch1, ch2), corr in rank_correlations.items():
+        if ch1 not in included_series or ch2 not in included_series:
+            continue
+        i, j = index_map[ch1], index_map[ch2]
+        dist = 1 - np.mean(np.abs(rank_correlations[(ch1, ch2)]))
+        distance_matrix[i, j] = distance_matrix[j, i] = dist
+
+    # Step 3: Compute local scales
+    sigma = compute_local_scales(distance_matrix, k_nn)
+
+    # Step 4: Build similarity matrix
+    similarity_matrix = build_similarity_matrix(distance_matrix, sigma)
+
+    # Step 5: Compute normalized Laplacian and eigenvalues
+    L, D = csgraph_laplacian(csgraph=similarity_matrix, normed=True, return_diag=True)
+    eigvals, eigvecs = eigh(L)  # full eigen decomposition (small n)
+
+    # Step 6: Estimate number of clusters using eigengap
+    eigvals = np.real(eigvals[:max_clusters + 1])
+    gaps = np.diff(eigvals)
+    est_k = np.argmax(gaps[1:]) + 1  # skip the first eigenvalue (always near 0)
+
+    # Step 7: Run spectral clustering
+    clustering = SpectralClustering(
+        n_clusters=est_k,
+        affinity='precomputed',
+        assign_labels='kmeans',
+        random_state=random_state
+    )
+    labels = clustering.fit_predict(similarity_matrix)
+
+    # Group channels by cluster label
+    clusters = defaultdict(list)
+    for i, label in enumerate(labels):
+        clusters[label].append(channels[i])
+
+    return list(clusters.values())
+
+def compute_local_scales(distance_matrix, k):
+    """
+    Compute local scale σ_i for each point as the distance to the k-th nearest neighbor.
+    """
+    n = distance_matrix.shape[0]
+    nbrs = NearestNeighbors(n_neighbors=min(k + 1, n), metric='precomputed').fit(distance_matrix)
+    distances, _ = nbrs.kneighbors(distance_matrix)
+    sigma = distances[:, k]  # σᵢ = distance to k-th nearest neighbor
+    return sigma
+
+def build_similarity_matrix(distance_matrix, sigma):
+    """
+    Build locally-scaled similarity matrix.
+    """
+    n = distance_matrix.shape[0]
+    similarity_matrix = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                similarity_matrix[i, j] = 1.0
+            else:
+                denom = sigma[i] * sigma[j]
+                if denom > 0:
+                    similarity_matrix[i, j] = np.exp(-distance_matrix[i, j] ** 2 / denom)
+                else:
+                    similarity_matrix[i, j] = 0.0
+    return similarity_matrix
+#
+# def normalize_affinity_matrix(A):
+#     """
+#     Normalize the affinity matrix to create L = D^(-1/2) A D^(-1/2)
+#     """
+#     D = np.sum(A, axis=1)
+#     D_inv_sqrt = np.diag(1.0 / np.sqrt(D + np.finfo(float).eps))  # Add epsilon to avoid div by 0
+#     L = D_inv_sqrt @ A @ D_inv_sqrt
+#     return L
+#
+# def best_rotation(Z):
+#     """
+#     Find the best orthogonal rotation matrix R that aligns Z with canonical axes using SVD.
+#     """
+#     _, _, Vt = np.linalg.svd(Z.T)
+#     R = Vt.T
+#     return R
+#
+# def alignment_cost(Z):
+#     """
+#     Compute alignment cost from paper:
+#     J = sum_i (1 - max_j Z_ij^2)
+#     """
+#     max_squared = np.max(Z ** 2, axis=1)
+#     return np.sum(1 - max_squared)
+#
+# def assign_clusters(Z):
+#     """
+#     Assign each point to the cluster with the maximum squared value in its rotated eigenvector.
+#     """
+#     return np.argmax(Z ** 2, axis=1)
+#
+# def self_tuning_spectral_clustering_rotation(rank_correlations, included_series, C_max=10, k=7):
+#     """
+#     Full Self-Tuning Spectral Clustering with automatic cluster number detection using rotation cost.
+#
+#     Parameters:
+#     - correlation_dict: dict with keys (f1, f2), values = correlation
+#     - C_max: maximum number of clusters to test
+#     - k: number of nearest neighbors for local scaling
+#
+#     Returns:
+#     - List of clusters (list of lists of features)
+#     - Optimal number of clusters
+#     - Alignment costs for each C
+#     """
+#     # Step 1: Extract features and index map
+#     # Step 1: Extract all unique channels and index mapping
+#     if included_series is None:
+#         included_series = set()
+#         for (s1, s2) in rank_correlations.keys():
+#             included_series.add(s1)
+#             included_series.add(s2)
+#
+#     channels = sorted(included_series)  # Ensure deterministic ordering
+#     index_map = {feat: i for i, feat in enumerate(channels)}
+#     n = len(channels)
+#
+#     # Step 2: Build distance matrix
+#     distance_matrix = np.ones((n, n))
+#     for (ch1, ch2), corr in rank_correlations.items():
+#         if ch1 not in included_series or ch2 not in included_series:
+#             continue
+#         i, j = index_map[ch1], index_map[ch2]
+#         dist = 1 - corr
+#         distance_matrix[i, j] = distance_matrix[j, i] = dist
+#
+#     # Step 3: Compute local scales
+#     sigma = compute_local_scales(distance_matrix, k)
+#
+#     # Step 4: Build affinity matrix
+#     A = build_affinity_matrix(distance_matrix, sigma)
+#
+#     # Step 5: Normalize
+#     L = normalize_affinity_matrix(A)
+#
+#     # Step 6: Eigen decomposition
+#     eigvals, eigvecs = eigh(L)
+#
+#     # Step 7: For each C, compute cost
+#     costs = []
+#     for C in range(2, min(C_max + 1, n)):
+#         X = eigvecs[:, :C]
+#         X_norm = X / np.linalg.norm(X, axis=1, keepdims=True)
+#         R = best_rotation(X_norm)
+#         Z = X_norm @ R
+#         cost = alignment_cost(Z)
+#         costs.append(cost)
+#     #############################################################
+#     # Step 8: Choose best C (largest C with minimal cost)
+#     min_cost = min(costs)
+#     best_C = max(i + 2 for i, c in enumerate(costs) if c <= min_cost + 1e-4)
+#
+#     # Step 9: Final clustering
+#     X_final = eigvecs[:, :best_C]
+#     X_norm = X_final / np.linalg.norm(X_final, axis=1, keepdims=True)
+#     R = best_rotation(X_norm)
+#     Z = X_norm @ R
+#     labels = assign_clusters(Z)
+#
+#     # Step 10: Group by clusters
+#     clusters = defaultdict(list)
+#     for i, label in enumerate(labels):
+#         clusters[label].append(channels[i])
+#
+#     return list(clusters.values()), best_C, costs
+
