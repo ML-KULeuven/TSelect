@@ -776,6 +776,7 @@ def compute_local_scales(distance_matrix, k):
     Compute local scale σ_i for each point as the distance to the k-th nearest neighbor.
     """
     n = distance_matrix.shape[0]
+    k = min(k, n - 1)  # Ensure k is within bounds
     nbrs = NearestNeighbors(n_neighbors=min(k + 1, n), metric='precomputed').fit(distance_matrix)
     distances, _ = nbrs.kneighbors(distance_matrix)
     sigma = distances[:, k]  # σᵢ = distance to k-th nearest neighbor
