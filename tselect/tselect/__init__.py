@@ -225,7 +225,7 @@ class FusionFilter(TransformerMixin):
                 print("     Filtering series")
                 start = time.process_time()
                 if X_tsfuse is None:
-                    self.series_filter.fit(X_pd, y, metadata)
+                    self.series_filter.fit(X_pd, y, metadata=metadata)
                     X_pd = X_pd[self.series_filter.selected_channels]
                 else:
                     self.series_filter.fit(X_tsfuse, y, metadata)
