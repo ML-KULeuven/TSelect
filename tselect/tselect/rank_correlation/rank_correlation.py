@@ -687,8 +687,11 @@ def cluster_correlations_spectral_clustering(rank_correlations: dict, included_s
                                              k_nn=7, random_state=SEED) \
         -> List[List[Union[str, int]]]:
     """
-       Clusters the signals based on their rank correlations using a spectral clustering algorithm.
-       Each cluster contains signals that are highly correlated to each other.
+       Clusters the signals based on their rank correlations using a spectral clustering algorithm that uses a local
+       scale and the eigengap heuristic to estimate the number of clusters. The local scale is based on the work of
+       Zelnik-Manor, L., & Perona, P. (2004). Self-tuning spectral clustering. Advances in neural information processing
+       systems, 17. The eigengap heuristic is based on the work of Von Luxburg, U. (2007). A tutorial on spectral
+       clustering. Statistics and computing, 17, 395-416.
 
        Parameters
        ----------
@@ -697,8 +700,12 @@ def cluster_correlations_spectral_clustering(rank_correlations: dict, included_s
        included_series: set, optional, default None
            The set of series of which the rank computations were computed. If no set is given, the set of series is
            assumed to be all series present in the rank_correlations dictionary.
-       n_clusters: int, optional, default 8
-            The number of clusters to form. If not specified, 8 clusters are formed.
+       max_clusters: int, optional, default None
+           The maximum number of clusters to use. If None, the number of clusters is set to the number of unique
+           channels.
+       k_nn: int, optional, default 7
+           The number of nearest neighbors to use for computing the local scale. This parameter controls the
+           locality of the clustering.
        random_state: int, optional, default SEED
             The random state to use for the clustering algorithm. This is used to ensure reproducibility of the
             clustering results.
@@ -717,20 +724,16 @@ def cluster_correlations_spectral_clustering(rank_correlations: dict, included_s
             included_series.add(s1)
             included_series.add(s2)
 
+    # At least three channels are needed to perform spectral clustering with the eigengap heuristic
+    if len(included_series) < 3:
+        return [[ch] for ch in included_series]
+
     channels = sorted(included_series)  # Ensure deterministic ordering
     index_map = {feat: i for i, feat in enumerate(channels)}
     n = len(channels)
     if max_clusters is None:
         max_clusters = n
 
-    # Step 2: Build distance matrix from correlation
-    # distance_matrix = np.ones((n, n))  # Start with max distance
-    # for (f1, f2), corr in rank_correlations.items():
-    #     i, j = channel_index[f1], channel_index[f2]
-    #     dist = 1 - corr  # Higher correlation = closer distance
-    #     distance_matrix[i, j] = distance_matrix[j, i] = dist
-
-    # Step 3: Compute local scaling parameters σᵢ using k-NN
     # Step 2: Build distance matrix
     distance_matrix = np.ones((n, n))
     for (ch1, ch2), corr in rank_correlations.items():
