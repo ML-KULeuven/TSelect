@@ -297,7 +297,7 @@ class BackwardChannelSelector(SequentialChannelSelector):
         _, best_score = self.evaluate_groups_of_channels(features_all, [self.selected_channels], train_ix, test_ix, y_train, y_test)
         current_groups = [[c for c in self.selected_channels if c != ch] for ch in self.selected_channels]
 
-        while len(self.selected_channels) > 0:
+        while len(self.selected_channels) > 1:
             best_group_index, current_score = self.evaluate_groups_of_channels(features_all, current_groups, train_ix,
                                                                                test_ix, y_train, y_test)
 
