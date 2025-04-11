@@ -9,6 +9,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 from tsfuse.data import Collection
 from tselect.utils import interpolate_nan_3d
@@ -51,7 +52,44 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
 
         return features
 
+    @staticmethod
+    def preprocess_extracted_features(features_train: np.ndarray, features_test: np.ndarray) -> (np.ndarray, np.ndarray):
+        """
+        Preprocess the extracted features by dropping NaN columns and scaling the data.
+
+        Parameters
+        ----------
+        features_train: np.ndarray
+            The training features
+        features_test: np.ndarray
+            The test features
+
+        Returns
+        -------
+        features_train: np.ndarray
+            The preprocessed training features
+        features_test: np.ndarray
+            The preprocessed test features
+
+        """
+        # Drop all NaN columns
+        if np.isnan(features_train).any():
+            nan_cols = np.isnan(features_train).all(axis=0)
+            features_train = features_train[:, ~nan_cols]
+            features_test = features_test[:, ~nan_cols]
+        # Impute rows where NaN still exist
+        if np.isnan(features_train).any():
+            replace_nans_by_col_mean(features_train)
+            replace_nans_by_col_mean(features_test)
+        scaler = MinMaxScaler()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            features_train = scaler.fit_transform(features_train)
+            features_test = scaler.transform(features_test)
+        return features_train, features_test
+
     def evaluate_model(self, X_train, X_test, y_train, y_test):
+        X_train, X_test = self.preprocess_extracted_features(X_train, X_test)
         clf = LogisticRegression(random_state=self.random_state)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
