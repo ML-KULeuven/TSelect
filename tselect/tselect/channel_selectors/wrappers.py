@@ -5,14 +5,13 @@ from typing import Dict, List, Iterable
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 from tsfuse.data import Collection
-from tselect.utils import interpolate_nan_3d
 from tselect.utils import replace_nans_by_col_mean
 from tselect.utils.constants import SEED
 from tsfuse.utils import encode_onehot
@@ -22,7 +21,10 @@ from TSelect.tselect.tselect.utils.constants import Keys
 
 
 class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
-    def __init__(self, improvement_threshold=0.001, test_size=None, random_state=SEED):
+    def __init__(self, model=None, improvement_threshold=0.001, test_size=None, random_state=SEED):
+        if model is None:
+            model = LogisticRegression(random_state=random_state)
+        self.model = model
         self.improvement_threshold = improvement_threshold
         self.scaler = None
         self.selected_channels = None
@@ -43,59 +45,62 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
     def fit(self, X: pd.DataFrame, y, force=False):
         pass
 
-    @staticmethod
-    def extract_features(X: np.ndarray) -> Dict[int, np.ndarray]:
-        features = dict()
-        for i in range(X.shape[1]):
-            X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
-            features[i] = SinglePassStatistics().transform(X_i).values[:, :, 0]
-
-        return features
-
-    @staticmethod
-    def preprocess_extracted_features(features_train: np.ndarray, features_test: np.ndarray) -> (np.ndarray, np.ndarray):
-        """
-        Preprocess the extracted features by dropping NaN columns and scaling the data.
-
-        Parameters
-        ----------
-        features_train: np.ndarray
-            The training features
-        features_test: np.ndarray
-            The test features
-
-        Returns
-        -------
-        features_train: np.ndarray
-            The preprocessed training features
-        features_test: np.ndarray
-            The preprocessed test features
-
-        """
-        # Drop all NaN columns
-        if np.isnan(features_train).any():
-            nan_cols = np.isnan(features_train).all(axis=0)
-            features_train = features_train[:, ~nan_cols]
-            features_test = features_test[:, ~nan_cols]
-        # Impute rows where NaN still exist
-        if np.isnan(features_train).any():
-            replace_nans_by_col_mean(features_train)
-            replace_nans_by_col_mean(features_test)
-        scaler = MinMaxScaler()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            features_train = scaler.fit_transform(features_train)
-            features_test = scaler.transform(features_test)
-        return features_train, features_test
+    # @staticmethod
+    # def extract_features(X: np.ndarray) -> Dict[int, np.ndarray]:
+    #     features = dict()
+    #     for i in range(X.shape[1]):
+    #         X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
+    #         features[i] = SinglePassStatistics().transform(X_i).values[:, :, 0]
+    #
+    #     return features
+    #
+    # @staticmethod
+    # def preprocess_extracted_features(features_train: np.ndarray, features_test: np.ndarray) -> (np.ndarray, np.ndarray):
+    #     """
+    #     Preprocess the extracted features by dropping NaN columns and scaling the data.
+    #
+    #     Parameters
+    #     ----------
+    #     features_train: np.ndarray
+    #         The training features
+    #     features_test: np.ndarray
+    #         The test features
+    #
+    #     Returns
+    #     -------
+    #     features_train: np.ndarray
+    #         The preprocessed training features
+    #     features_test: np.ndarray
+    #         The preprocessed test features
+    #
+    #     """
+    #     # Drop all NaN columns
+    #     if np.isnan(features_train).any():
+    #         nan_cols = np.isnan(features_train).all(axis=0)
+    #         features_train = features_train[:, ~nan_cols]
+    #         features_test = features_test[:, ~nan_cols]
+    #     # Impute rows where NaN still exist
+    #     if np.isnan(features_train).any():
+    #         replace_nans_by_col_mean(features_train)
+    #         replace_nans_by_col_mean(features_test)
+    #     scaler = MinMaxScaler()
+    #     with warnings.catch_warnings():
+    #         warnings.simplefilter("ignore")
+    #         features_train = scaler.fit_transform(features_train)
+    #         features_test = scaler.transform(features_test)
+    #     return features_train, features_test
 
     def evaluate_model(self, X_train, X_test, y_train, y_test):
-        X_train, X_test = self.preprocess_extracted_features(X_train, X_test)
-        clf = LogisticRegression(random_state=self.random_state)
+        # X_train, X_test = self.preprocess_extracted_features(X_train, X_test)
+        try:
+            clf = clone(self.model)
+        except TypeError:
+            clf = copy.deepcopy(self.model)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             clf.fit(X_train, y_train)
-        if np.isnan(X_test).any():
-            replace_nans_by_col_mean(X_test)
+        if pd.isna(X_test).any().any():
+            pd.fillna(X_test, inplace=True)
 
         predict_proba = clf.predict_proba(X_test)
         if np.unique(y_test).shape[0] != predict_proba.shape[1]:
@@ -106,25 +111,14 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
 
 
 
-    def evaluate_groups_of_channels(self, features_all: Dict[int, np.ndarray], groups_to_evaluate: List[list],
-                                    train_ix: Iterable, test_ix: Iterable, y_train: pd.Series, y_test: pd.Series) -> (int, float):
+    def evaluate_groups_of_channels(self, X: pd.DataFrame, y:pd.Series, groups_to_evaluate: List[list]) -> (int, float):
         """
         Compute the initial scores for the forward selection process.
 
         Parameters
         ----------
-        features_all: Dict[str, np.ndarray]
-            The features to use for the selection process
         groups_to_evaluate: List[list]
             The groups of channels to evaluate. Each group is a list of channel indices.
-        train_ix: Iterable
-            The indices of the training set
-        test_ix: Iterable
-            The indices of the test set
-        y_train: pd.Series
-            The target variable for the training set
-        y_test: pd.Series
-            The target variable for the test set
 
         Returns
         -------
@@ -133,12 +127,14 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
         """
         scores = []
         for group in groups_to_evaluate:
-            X = []
-            for ch in group:
-                X.append(features_all[ch])
-            X = np.concatenate(X, axis=1)
-            X_train = X[train_ix, :]
-            X_test = X[test_ix, :]
+            X_i = X[group]
+            X_train, X_test, y_train, y_test = self.train_test_split(X_i, y)
+            # X = []
+            # for ch in group:
+            #     X.append(features_all[ch])
+            # X = np.concatenate(X, axis=1)
+            # X_train = X[train_ix, :]
+            # X_test = X[test_ix, :]
             score = self.evaluate_model(X_train, X_test, y_train, y_test)
             scores.append(score)
 
@@ -147,52 +143,71 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
         return best_group, best_score
 
 
-    def preprocessing(self, X: pd.DataFrame) -> np.ndarray:
+    # def preprocessing(self, X: pd.DataFrame) -> np.ndarray:
+    #     """
+    #     Preprocess the data before fitting the filter.
+    #
+    #     Parameters
+    #     ----------
+    #     X: pd.DataFrame
+    #         The data to preprocess
+    #
+    #     Returns
+    #     -------
+    #     np.ndarray
+    #         The preprocessed data
+    #
+    #     """
+    #     from tselect import MinMaxScaler3D
+    #     self.scaler = MinMaxScaler3D()
+    #     with warnings.catch_warnings():
+    #         warnings.simplefilter("ignore")
+    #         X_np = self.scaler.fit_transform(X)
+    #     if np.isnan(X_np).any():
+    #         interpolate_nan_3d(X_np, inplace=True)
+    #     return X_np
+
+    def train_test_split(self, X: pd.DataFrame, y: pd.Series) -> (list, list):
         """
-        Preprocess the data before fitting the filter.
+        Splits a MultiIndex DataFrame with (instance, timepoint) index into train and test sets.
 
-        Parameters
-        ----------
-        X: pd.DataFrame
-            The data to preprocess
+        Parameters:
+        - X (pd.DataFrame): MultiIndex DataFrame with index (instance, timepoint)
+        - test_size (float): Fraction of instances to include in the test split
+        - random_state (int): Seed for reproducibility
 
-        Returns
-        -------
-        np.ndarray
-            The preprocessed data
-
+        Returns:
+        - df_train (pd.DataFrame): Training split
+        - df_test (pd.DataFrame): Testing split
         """
-        from tselect import MinMaxScaler3D
-        self.scaler = MinMaxScaler3D()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            X_np = self.scaler.fit_transform(X)
-        if np.isnan(X_np).any():
-            interpolate_nan_3d(X_np, inplace=True)
-        return X_np
+        if not isinstance(X.index, pd.MultiIndex):
+            raise ValueError("DataFrame must have a MultiIndex (instance, timepoint)")
 
-    def train_test_split(self, X: np.ndarray) -> (list, list):
-        """
-        Split the data into a training and test set.
+        # Extract unique instances
+        instances = X.index.get_level_values(0).unique()
 
-        Parameters
-        ----------
-        X: np.ndarray
-            The data to split
+        test_size = self.compute_test_size(len(instances))
 
-        Returns
-        -------
-        list
-            The indices of the training set
-        list
-            The indices of the test set
-        """
-        nb_instances = X.shape[0]
-        test_size = self.compute_test_size(nb_instances)
-        train_ix_all, test_ix_all = train_test_split(list(range(nb_instances)),
-                                                     test_size=test_size,
-                                                     random_state=self.random_state)
-        return train_ix_all, test_ix_all
+        # Align y with instances to ensure correct indexing
+        y = y.loc[instances]
+
+        # Perform stratified split
+        train_instances, test_instances, y_train, y_test = train_test_split(
+            instances,
+            y,
+            test_size=test_size,
+            random_state=self.random_state,
+            stratify=y
+        )
+
+        # Create masks to filter the DataFrame
+        train_mask = X.index.get_level_values(0).isin(train_instances)
+        test_mask = X.index.get_level_values(0).isin(test_instances)
+
+        df_train = X[train_mask]
+        df_test = X[test_mask]
+
+        return df_train, df_test, y_train, y_test
 
     def compute_test_size(self, nb_instances):
         """
@@ -232,28 +247,27 @@ class ForwardChannelSelector(SequentialChannelSelector):
 
     def fit(self, X: pd.DataFrame, y, force=False, metadata=None):
         y = copy.deepcopy(y)
-        X_np = self.preprocessing(X)
-        self.columns = X.columns
-        self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
-        self.index = X.index
+        # X_np = self.preprocessing(X)
+        # self.columns = X.columns
+        # self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
+        # self.index = X.index
 
         if self.selected_channels is not None and not force:
             return None
 
-        n_channels = X_np.shape[1]
-        all_channels = list(range(n_channels))
+        # n_channels = len(X.columns)
+        all_channels = X.columns
         self.selected_channels = []
         self.remaining_channels = set(all_channels)
 
-        features_all = self.extract_features(X_np)
-        train_ix, test_ix = self.train_test_split(X_np)
-        y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
+        # features_all = self.extract_features(X_np)
+        # train_ix, test_ix = self.train_test_split(X)
+        # y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
 
         current_groups = [[ch] for ch in all_channels]
         best_score = 0
         while len(self.remaining_channels) > 0:
-            best_group_index, current_score = self.evaluate_groups_of_channels(features_all, current_groups, train_ix,
-                                                                               test_ix, y_train, y_test)
+            best_group_index, current_score = self.evaluate_groups_of_channels(X, y, current_groups)
 
             if current_score - best_score < self.improvement_threshold:
                 break
