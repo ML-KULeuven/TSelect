@@ -279,8 +279,8 @@ class ForwardChannelSelector(SequentialChannelSelector):
             self.remaining_channels.remove(last_added_ch)
             current_groups = [best_group + [ch] for ch in self.remaining_channels]
 
-        for i, ch in enumerate(self.selected_channels):
-            self.selected_channels[i] = self.columns[ch]
+        # for i, ch in enumerate(self.selected_channels):
+        #     self.selected_channels[i] = self.columns[ch]
 
         self.update_metadata(metadata)
         return None
