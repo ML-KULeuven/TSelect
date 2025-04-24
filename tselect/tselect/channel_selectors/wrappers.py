@@ -9,13 +9,12 @@ from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
 
-from tsfuse.data import Collection
-from tselect.utils import replace_nans_by_col_mean
+# from tsfuse.data import Collection
+# from tselect.utils import replace_nans_by_col_mean
 from tselect.utils.constants import SEED
 from tsfuse.utils import encode_onehot
-from tsfuse.transformers import SinglePassStatistics
+# from tsfuse.transformers import SinglePassStatistics
 
 from TSelect.tselect.tselect.utils.constants import Keys
 
@@ -242,8 +241,9 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
             metadata[Keys.series_filtering][Keys.series_filter].append(self)
 
 class ForwardChannelSelector(SequentialChannelSelector):
-    def __init__(self, improvement_threshold=0.001, test_size=None, random_state=SEED):
-        super().__init__(improvement_threshold=improvement_threshold, test_size=test_size, random_state=random_state)
+    def __init__(self, model=None, improvement_threshold=0.001, test_size=None, random_state=SEED):
+        super().__init__(model=model, improvement_threshold=improvement_threshold, test_size=test_size,
+                         random_state=random_state)
 
     def fit(self, X: pd.DataFrame, y, force=False, metadata=None):
         y = copy.deepcopy(y)
@@ -286,34 +286,39 @@ class ForwardChannelSelector(SequentialChannelSelector):
         return None
 
 class BackwardChannelSelector(SequentialChannelSelector):
-    def __init__(self, improvement_threshold=0.001, test_size=None, random_state=SEED):
-        super().__init__(improvement_threshold=improvement_threshold, test_size=test_size, random_state=random_state)
+    def __init__(self, model=None, improvement_threshold=0.001, test_size=None, random_state=SEED):
+        super().__init__(model=model, improvement_threshold=improvement_threshold, test_size=test_size,
+                         random_state=random_state)
 
     def fit(self, X: pd.DataFrame, y, force=False, metadata=None):
         y = copy.deepcopy(y)
-        X_np = self.preprocessing(X)
-        self.columns = X.columns
-        self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
-        self.index = X.index
+        # X_np = self.preprocessing(X)
+        # self.columns = X.columns
+        # self.map_columns_np = {col: i for i, col in enumerate(X.columns)}
+        # self.index = X.index
 
         if self.selected_channels is not None and not force:
             return None
 
-        n_channels = X_np.shape[1]
-        all_channels = list(range(n_channels))
+
+        all_channels = list(X.columns)
         self.selected_channels = copy.deepcopy(all_channels)
         self.remaining_channels = set()
+        # n_channels = X_np.shape[1]
+        # all_channels = list(range(n_channels))
+        # self.selected_channels = copy.deepcopy(all_channels)
+        # self.remaining_channels = set()
 
-        features_all = self.extract_features(X_np)
-        train_ix, test_ix = self.train_test_split(X_np)
-        y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
+        # features_all = self.extract_features(X_np)
+        # train_ix, test_ix = self.train_test_split(X_np)
+        # y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
 
-        _, best_score = self.evaluate_groups_of_channels(features_all, [self.selected_channels], train_ix, test_ix, y_train, y_test)
+        # _, best_score = self.evaluate_groups_of_channels(features_all, [self.selected_channels], train_ix, test_ix, y_train, y_test)
+        _, best_score = self.evaluate_groups_of_channels(X, y, [self.selected_channels])
         current_groups = [[c for c in self.selected_channels if c != ch] for ch in self.selected_channels]
 
         while len(self.selected_channels) > 1:
-            best_group_index, current_score = self.evaluate_groups_of_channels(features_all, current_groups, train_ix,
-                                                                               test_ix, y_train, y_test)
+            best_group_index, current_score = self.evaluate_groups_of_channels(X, y, current_groups)
 
             if best_score > current_score:
                 break
@@ -325,8 +330,8 @@ class BackwardChannelSelector(SequentialChannelSelector):
             self.remaining_channels.add(last_removed_ch)
             current_groups = [[c for c in best_group if c != ch] for ch in self.selected_channels]
 
-        for i, ch in enumerate(self.selected_channels):
-            self.selected_channels[i] = self.columns[ch]
+        # for i, ch in enumerate(self.selected_channels):
+        #     self.selected_channels[i] = self.columns[ch]
 
         self.update_metadata(metadata)
         return None
