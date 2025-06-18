@@ -5,8 +5,9 @@ import numpy as np
 
 setup(
     name='tsfuse',
-    version='2.0',
+    version='0.2.2',
     packages=find_packages(),
+    python_requires='>=3.10, <3.11',
     include_package_data=True,
     package_data={},
     setup_requires=[
@@ -15,15 +16,15 @@ setup(
         'numpy>=1.22.4'
     ],
     install_requires=[
-        'six>=1.16.0',
-        'graphviz>=0.20.1',
-        'scipy>=1.10.1',
-        'scikit-learn',
+        'six>=1.17.0',
+        'graphviz>=0.20.2',
+        'scipy>=1.15.1',
+        'scikit-learn>=1.3.2',
         'statsmodels>=0.14.0',
         'Pint>=0.21.1',
-        'matplotlib==3.7.3',
+        'matplotlib==3.10.0',
         'pandas>=1.5.3',
-        'sktime',
+        'sktime>=0.23.1',
     ],
     extras_require={'test': [
         'pytest',

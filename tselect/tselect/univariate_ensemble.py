@@ -1,6 +1,6 @@
 import time
 import warnings
-from typing import List
+from typing import List, Callable
 
 import numpy as np
 import pandas as pd
@@ -15,15 +15,18 @@ from tsfuse.data import Collection
 from tsfuse.transformers import SinglePassStatistics
 from sktime.transformations.panel.rocket import MiniRocket
 
+from tselect.config import Config, get_default_config
 
 class UnivariateEnsemble(AbstractExtractor, TransformerMixin):
     def __init__(self, series_fusion: bool = False,
-                 irrelevant_filter=True,
-                 redundant_filter=True,
-                 auc_percentage: float = 0.75,
-                 auc_threshold: float = 0.5,
-                 corr_threshold: float = 0.7,
-                 test_size: float = 0.2,
+                 tselect_config: Config = get_default_config(),
+                 # irrelevant_filter=True,
+                 # redundant_filter=True,
+                 # auc_percentage: float = 0.75,
+                 # auc_threshold: float = 0.5,
+                 # corr_threshold: float = 0.7,
+                 # feature_extractor: Callable = None,
+                 # test_size: float = 0.2,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
@@ -69,8 +72,7 @@ class UnivariateEnsemble(AbstractExtractor, TransformerMixin):
             Which features to extract. Can be either 'statistics' for 8 statistical features or 'minirocket' for the
             minirocket features.
         """
-        super().__init__(series_fusion, irrelevant_filter, redundant_filter, auc_percentage, auc_threshold,
-                         corr_threshold, test_size, views, add_tags, compatible, random_state)
+        super().__init__(series_fusion, tselect_config, views, add_tags, compatible, random_state)
         if features != Keys.statistics and features != Keys.minirocket:
             raise ValueError(f"Features should be either {Keys.statistics} or {Keys.minirocket}")
         self.features = features

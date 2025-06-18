@@ -13,6 +13,8 @@ from tsfuse.computation import Input
 from tsfuse.construction.mlj20 import TSFuseExtractor
 from tsfuse.data import dict_collection_to_pd_multiindex, Collection, pd_multiindex_to_dict_collection
 
+from tselect.config import Config, get_default_config
+
 
 class FusionFilter(TransformerMixin):
     """
@@ -20,12 +22,7 @@ class FusionFilter(TransformerMixin):
     """
 
     def __init__(self, series_fusion: bool = True,
-                 irrelevant_filter=True,
-                 redundant_filter=True,
-                 auc_percentage: float = 0.75,
-                 auc_threshold: float = 0.5,
-                 corr_threshold: float = 0.7,
-                 test_size: float = None,
+                 tselect_config: Config = get_default_config(),
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
@@ -37,25 +34,31 @@ class FusionFilter(TransformerMixin):
         ----------
         series_fusion : bool, optional, default False
             Whether to derive new signals from the original ones ("fusion").
-        irrelevant_filter : bool, optional, default False
-            Whether to filter out irrelevant signals ("irrelevant filter").
-        redundant_filter : bool, optional, default False
-            Whether to filter out redundant signals ("redundant filter").
-        auc_percentage : float, optional, default 0.75
-            The percentage of the time series that will remain after the irrelevant filter. If the auc_threshold is
-            0.75, the 75% time series with the highest AUC will remain.
-        auc_threshold : float, optional, default 0.5
-            The threshold for the irrelevant filter. If the auc_threshold is 0.5, all series with an AUC lower than
-            0.5 will be removed, regardless of the specified auc_percentage. After all signals with an AUC lower than
-            this threshold are removed, the auc_percentage will be applied.
-        corr_threshold : float, optional, default 0.7
-            The threshold used for clustering rank correlations. All predictions with a rank correlation above this
-             threshold are considered correlated.
-        test_size : float, optional, default None
-            The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
-            percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-            If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
-            instances.
+        tselect_config: Config, optional, default get_default_config()
+            The configuration object that contains all hyperparameters for the TSelect channel selector:
+                - irrelevant_filter: bool, default=True
+                    Whether to filter out irrelevant series based on their AUC score
+                - redundant_filter: bool, default=True
+                    Whether to filter out redundant series based on their rank correlation
+                - random_state: int, default=SEED
+                    The random state used throughout the class.
+                - filtering_threshold_auc: float, default=0.5
+                    The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
+                    threshold are removed.
+                - auc_percentage: float, default=0.6
+                    The percentage of series to keep based on their AUC score. This parameter is only used if
+                    irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
+                - filtering_threshold_corr: float, default=0.7
+                     The threshold used for clustering rank correlations. All predictions with a rank correlation above this
+                     threshold are considered correlated.
+                - irrelevant_better_than_random: bool, default=False
+                    Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
+                    target. If the channel performs Better Than Random (BTR), it is kept.
+                - filtering_test_size: float, default=None
+                    The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
+                    percentage of the data that is used for computing the AUC score. The remaining data is used for training.
+                    If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
+                    instances.
         views : list of int, optional, default None
              The different views of the data. This parameter is used to convert to the internal TSFuse Collection
              format, that groups the dimensions of the data in the unique sensors. For more information on this,
@@ -72,13 +75,8 @@ class FusionFilter(TransformerMixin):
             The random state used throughout the class.
         """
         self.series_fusion = series_fusion
-        self.irrelevant_filter = irrelevant_filter
-        self.redundant_filter = redundant_filter
-        self.series_filtering = irrelevant_filter or redundant_filter
-        self.auc_percentage = auc_percentage
-        self.auc_threshold = auc_threshold
-        self.corr_threshold = corr_threshold
-        self.test_size = test_size
+        self.tselect_config = tselect_config
+        self.series_filtering = self.tselect_config.irrelevant_filter or self.tselect_config.redundant_filter
         self.views = views
         self.add_tags = add_tags
         self.compatible = compatible
@@ -93,10 +91,7 @@ class FusionFilter(TransformerMixin):
         self.nodes_translation = {}
 
     def __init_filter__(self):
-        self.series_filter = TSelect(irrelevant_filter=self.irrelevant_filter, redundant_filter=self.redundant_filter,
-                                     random_state=SEED, auc_percentage=self.auc_percentage,
-                                     filtering_threshold_corr=self.corr_threshold,
-                                     filtering_test_size=self.test_size) if self.series_filtering else None
+        self.series_filter = TSelect(self.tselect_config) if self.series_filtering else None
 
     def transform_fusion(self, X_tsfuse: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
         """
@@ -230,15 +225,16 @@ class FusionFilter(TransformerMixin):
                 print("     Filtering series")
                 start = time.process_time()
                 if X_tsfuse is None:
-                    self.series_filter.fit(X_pd, y, metadata)
-                    X_pd = X_pd[self.series_filter.filtered_series]
+                    self.series_filter.fit(X_pd, y, metadata=metadata)
+                    X_pd = X_pd[self.series_filter.selected_channels]
                 else:
                     self.series_filter.fit(X_tsfuse, y, metadata)
-                    X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.filtered_series}
+                    X_tsfuse = {k: v for k, v in X_tsfuse.items() if k in self.series_filter.selected_channels}
                 if self.series_fusion:
-                    self.tsfuse_extractor.set_subset_selected_series(self.series_filter.filtered_series)
-                metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                print("         Number of series after filtering: ", len(self.series_filter.filtered_series))
+                    self.tsfuse_extractor.set_subset_selected_series(self.series_filter.selected_channels)
+                if metadata is not None:
+                    metadata[Keys.time_series_filtering].append(time.process_time() - start)
+                print("         Number of series after filtering: ", len(self.series_filter.selected_channels))
                 print("         Total filtering time: ", time.process_time() - start)
 
             # After filtering because fewer nodes should be added then

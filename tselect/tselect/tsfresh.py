@@ -1,40 +1,31 @@
+import contextlib
+import warnings
+import logging
 from typing import List, Callable
 
 import pandas as pd
 from sklearn.base import TransformerMixin
+from sktime.transformations.panel.tsfresh import TSFreshFeatureExtractor
 
-from tselect import SEED
+from tselect import reset_first_level_index, SEED
 from tselect.abstract_extractor import AbstractExtractor
-from tselect.utils import reset_first_level_index, pad_until_length
-from sktime.transformations.panel.rocket import (
-    MiniRocketMultivariateVariable,
-)
 
 from tselect.config import Config, get_default_config
 
 
-class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
-    """
-    A class to extract features from time series using MiniRocket. It is a wrapper around sktime's
-    MiniRocketMultivariate class. Additionally, it can derive new signals from the original ones ("fusion"), and
-    filter out irrelevant ("irrelevant filter") and redundant signals ("redundant filter").
-    """
-
+class TSFreshExtractor(AbstractExtractor, TransformerMixin):
     def __init__(self, series_fusion: bool = False,
                  tselect_config: Config = get_default_config(),
-                #  irrelevant_filter: bool = False,
-                #  redundant_filter: bool = False,
-                #  auc_percentage: float = 0.75,
-                #  auc_threshold: float = 0.5,
-                #  corr_threshold: float = 0.7,
-                # feature_extractor: Callable = None,
-                #  test_size: float = 0.2,
+                 # irrelevant_filter: bool = False,
+                 # redundant_filter: bool = False,
+                 # auc_percentage: float = 0.75,
+                 # auc_threshold: float = 0.5,
+                 # corr_threshold: float = 0.7,
+                 # feature_extractor: Callable = None,
+                 # test_size: float = 0.2,
                  views: List[int] = None,
                  add_tags=lambda x: x,
                  compatible=lambda x: x,
-                 num_kernels: int = 10_000,
-                 max_dilations_per_kernel: int = 32,
-                 n_jobs: int = 1,
                  random_state: int = SEED):
         """
         The constructor for MiniRocketExtractor class.
@@ -74,24 +65,16 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
             A function that adds tags to the data. This parameter is used to convert to the internal TSFuse Collection
             and describes what dimensions can be combined to derive new series. For more information on this,
             we refer to https://github.com/arnedb/tsfuse
-        num_kernels : int, optional, default 10_000
-            The number of kernels to use for the MiniRocket transformation.
-        max_dilations_per_kernel : int, optional, default 32
-            The maximum number of dilations per kernel to use for the MiniRocket transformation.
-        n_jobs : int, optional, default 1
-            The number of jobs to use MiniRocket.
         random_state : int, optional, default SEED
             The random state used throughout the class.
         """
         super().__init__(series_fusion, tselect_config, views, add_tags, compatible, random_state)
-        self.minirocket = MiniRocketMultivariateVariable(num_kernels=num_kernels,
-                                                         max_dilations_per_kernel=max_dilations_per_kernel,
-                                                         n_jobs=n_jobs,
-                                                         random_state=random_state)
+        self.tsfresh = TSFreshFeatureExtractor(show_warnings=False)
 
     def transform_model(self, X: pd.DataFrame):
         """
-        Transforms the data using MiniRocket.
+        Transform the data by extracting features from it using TSFresh. The average and standard deviation are also
+        included as features.
 
         Parameters
         ----------
@@ -103,14 +86,16 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
         pd.DataFrame
             The transformed data.
         """
-        if X.index.levels[1].shape[0] < 9:
-            X = pad_until_length(X, 9)
-        
-        return self.minirocket.transform(X)
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)
+        warnings.filterwarnings("ignore")
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+            # warnings.simplefilter("ignore")
+        return self.tsfresh.transform(X)
 
-    def fit_model(self, X: pd.DataFrame, y: pd.Series):
+    def fit_model(self, X: pd.DataFrame, y):
         """
-        Fits MiniRocket to the data.
+        Fits TSFresh to the data.
 
         Parameters
         ----------
@@ -119,9 +104,8 @@ class MiniRocketExtractor(AbstractExtractor, TransformerMixin):
         y : pd.Series
             The target values.
         """
-        if X.index.levels[1].shape[0] < 9:
-            X = pad_until_length(X, 9)
-
         X_mini, y_mini = reset_first_level_index(X, y)
-        self.minirocket.fit(X_mini, y_mini)
+        logger = logging.getLogger()
+        logger.setLevel(logging.CRITICAL)
+        self.tsfresh.fit(X_mini, y_mini)
         return None

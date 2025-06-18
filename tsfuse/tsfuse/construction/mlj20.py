@@ -30,7 +30,7 @@ class TSFuseExtractor(TransformerMixin):
                  attribute_fusion=True,
                  series_filter=None,
                  max_series_permutations=10,
-                 max_attribute_permutations=1000,
+                 max_attribute_permutations=10,
                  max_series_correlation=0.9,
                  coefficients=0.1,
                  interaction=0.1,
@@ -77,9 +77,9 @@ class TSFuseExtractor(TransformerMixin):
                 print("     Filtering series")
                 start = time.process_time()
                 self.series_filter.fit({str(k): v for k, v in self.get_selected_series(data).items()}, y, metadata)
-                self.set_subset_selected_series(self.series_filter.filtered_series)
+                self.set_subset_selected_series(self.series_filter.selected_channels)
                 metadata[Keys.time_series_filtering].append(time.process_time() - start)
-                print("           Number of fused signals: ", len(self.series_))
+                print("           Number of selected signals: ", len(self.series_))
 
             print("     Series to attributes")
             self.series_to_attributes(data, metadata)
@@ -166,7 +166,8 @@ class TSFuseExtractor(TransformerMixin):
                             # Compute output
                             output = transformer.transform(*[data[n.trace] for n in permutation])
                             # Checked, now add the transformer to the generated nodes
-                            if output is not None:
+                            if (output is not None and not np.isinf(output.values).any() and
+                                    not np.isnan(output.values).any()):
                                 generated.append(transformer)
                                 data[transformer.trace] = output
                                 self.depth_[transformer.trace] = depth + 1
@@ -175,14 +176,22 @@ class TSFuseExtractor(TransformerMixin):
 
         # Transform to one-dimensional individual series
         series = self.to1d(data, series)
+
+        if metadata:
+            metadata[Keys.time_series_to_series].append(time.process_time() - start)
         # Select non-redundant series
         if select_non_redundant:
+            start_select = time.process_time()
             series = self.select_non_redundant_series(data, series, corr=self.max_series_correlation)
+            if metadata:
+                metadata[Keys.time_series_filtering].append(time.process_time() - start_select)
+                series_filter = RedundantSelectorTSFuse(corr_threshold=self.max_series_correlation)
+                series_filter.selected_channels = [str(s) for s in series]
+                metadata[Keys.series_filtering][Keys.series_filter].append(series_filter)
         # Done
         self.series_ = series
 
         if metadata:
-            metadata[Keys.time_series_to_series].append(time.process_time() - start)
             metadata[Keys.fused_series].append(len(self.series_) - len_series_start)
 
     def series_to_attributes(self, data, metadata=None):
@@ -190,6 +199,8 @@ class TSFuseExtractor(TransformerMixin):
 
         extracted = []
         series = []
+        if self.max_attribute_permutations == 'max':
+            self.max_attribute_permutations = len(self.series_)
         for s in self.series_:
             x = data[s.trace]
             if x.shape[2] == 1: series.append(s)
@@ -203,7 +214,7 @@ class TSFuseExtractor(TransformerMixin):
                 # Generate compatible permutations
                 permutations = []
                 for permutation in self.generate_permutations([], series, p):
-                    if (p > 1) and (len(permutations) >= self.max_series_permutations):
+                    if (p > 1) and (len(permutations) >= self.max_attribute_permutations):
                         break
                     if self.check_compatible(data, permutation):
                         permutations.append(permutation)
@@ -628,3 +639,8 @@ def create(setting):
         return minimal
     else:
         return full
+
+class RedundantSelectorTSFuse:
+    def __init__(self, corr_threshold=0.9):
+        self.corr_threshold = corr_threshold
+        self.selected_channels = []
