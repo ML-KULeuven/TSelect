@@ -1,7 +1,9 @@
+import gc
 import random
 import time
 import warnings
 from _operator import itemgetter
+from collections import defaultdict
 from math import ceil
 from typing import Union, Dict
 
@@ -91,7 +93,7 @@ class TSelect(TransformerMixin):
         self.test_size = filtering_test_size
         self.clusters = None
         self.rank_correlation = None
-        self.selected_channels = None
+        self.selected_channels: List[str | int] = None
         self.selected_col_nb = None
         self._sorted_scores: Optional[List[Union[str, int]]] = None
         self.irrelevant_selector_keep_best_x = irrelevant_selector_percentage
@@ -213,6 +215,66 @@ class TSelect(TransformerMixin):
         self.update_metadata(metadata)
         return None
 
+
+    def fit_generator(self, gen_train, gen_val, channel_names: List[str]=None, metadata=None, force=False) -> None:
+        """
+        Fit the channel selector to the data from a generator.
+
+        Parameters
+        ----------
+        gen_train: generator
+            A generator that yields batches of training data in the format (X, y), where X is a pandas DataFrame,
+            a numpy array or a tf.Tensor and y is a pandas Series or a numpy array.
+        gen_val: generator or None
+            A generator that yields batches of validation data. If None, the training data is split into a training and
+            validation set.
+        channel_names: List[str], default=None
+            The names of the channels. If None, the channels are numbered from 0 to nb_channels - 1.
+        metadata: dict, default=None
+            The metadata to update with the results of the filter. If no metadata is provided, no metadata is updated.
+        force: bool
+            Whether to force the filter to be retrained, even if it has already been trained.
+
+        Returns
+        -------
+        None, for performance reasons, the filter is only fitted to the data, but the data is not transformed.
+        """
+        self.columns = channel_names
+        if not force and self.selected_channels is not None:
+            return None
+
+        ranks, best_removed_score = self.train_models_generator(gen_train, gen_val)
+
+        if self.irrelevant_filter and not self.irrelevant_better_than_random:
+            start = time.process_time()
+            ranks_filtered = self.irrelevant_selector_percentage(data_to_filter=ranks, p=self.irrelevant_selector_keep_best_x)
+
+            if len(ranks_filtered) == 0:
+                # The unfiltered ranks will be kept.
+                warnings.warn(f"No series passed the threshold in the irrelevant selector, please make the threshold "
+                              f"less strict. The best removed score was {best_removed_score}. For this run, all signals "
+                                f"that passed the absolute threshold are kept.")
+
+            elif len(ranks_filtered) == 1 and self.redundant_filter:
+                self.rank_correlation = dict()
+                self.clusters = [list(ranks_filtered.keys())]
+                self.selected_channels = list(ranks_filtered.keys())
+                self.update_metadata(metadata)
+                return None
+            else:
+                ranks = ranks_filtered
+            if self.print_times:
+                print("         Time irrelevant selector: ", time.process_time() - start)
+
+        if self.redundant_filter:
+            self.redundant_filtering(ranks)
+        else:
+            self.selected_channels = list(ranks.keys())
+
+        self.update_metadata(metadata)
+        return None
+
+
     def preprocessing(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """
         Preprocess the data before fitting the filter.
@@ -321,7 +383,7 @@ class TSelect(TransformerMixin):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 clf.fit(features_train, y_train)
-            self.models["Models"][col] = clf
+            # self.models["Models"][col] = clf
             self.times["Training model"] += time.process_time() - start2
             start2 = time.process_time()
             if np.isnan(features_test).any():
@@ -384,6 +446,90 @@ class TSelect(TransformerMixin):
             print("             | Time predictions: ", self.times["Predictions"])
             print("             | Time computing evaluation metric: ", self.times["Computing evaluation metric"])
             print("             | Time removing uninformative signals: ", self.times["Removing irrelevant channels"])
+            print("             | Time computing ranks: ", self.times["Computing ranks"])
+            print("             | Time computing multiple models: ", self.times["Multiple models weighing"])
+        return ranks, best_removed_score
+
+
+    def train_models_generator(self, gen_train, gen_val):
+        start = time.process_time()
+        x_train, y_train = self.extract_features_generator(gen_train, validation=False)
+        self.times["Extracting features"] += time.process_time() - start
+        start = time.process_time()
+
+        for col in self.columns:
+            clf = LogisticRegression(random_state=self.random_state)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                clf.fit(x_train[col], y_train)
+            self.models["Models"][col] = clf
+            self.times["Training model"] += time.process_time() - start
+
+        del x_train
+        del y_train
+        gc.collect()
+
+        start = time.process_time()
+        x_val, y_val = self.extract_features_generator(gen_val, validation=True)
+        self.times["Extracting features"] += time.process_time() - start
+
+        ranks = {}
+        best_removed_score = 0
+        predictions_removed_signals = {}
+
+        for col in self.columns:
+            predict_proba = self.models["Models"][col].predict_proba(x_val[col])
+            if np.unique(y_val).shape[0] != predict_proba.shape[1]:
+                raise ValueError("Not all classes are present in the test set, increase the test size to be able to "
+                                 "evaluate individual channels")
+            self.times["Predictions"] += time.process_time() - start
+
+            start = time.process_time()
+            score = self.evaluation_metric(y_val, predict_proba)
+            self.times["Computing evaluation metric"] += time.process_time() - start
+            start = time.process_time()
+            if self.irrelevant_filter:
+                # Test evaluation score high enough
+                to_keep = not (score < self.irrelevant_threshold) if self.higher_is_better \
+                    else not (score > self.irrelevant_threshold)
+                if not to_keep:
+                    self.removed_series_too_low_metric.add((col, score))
+                    predictions_removed_signals[col] = predict_proba
+                    if score > best_removed_score if self.higher_is_better else score < best_removed_score:
+                        best_removed_score = score
+                    continue
+            self.times["Removing irrelevant channels"] += time.process_time() - start
+            self.evaluation_metric_per_channel[col] = score
+
+            start = time.process_time()
+            ranks[col] = probabilities2rank(predict_proba)
+            self.times["Computing ranks"] += time.process_time() - start
+
+        del x_val
+        del y_val
+        self.models["Models"] = {}
+        gc.collect()
+
+        # If no series passed the threshold filtering, keep all series for now
+        if len(ranks) == 0:
+            warnings.warn(
+                f"No series passed the absolute threshold, please make the threshold less strict. The best score"
+                f" was {best_removed_score}. For this run, no series worse than the absolute threshold "
+                f"(default=0.5) were removed.")
+            for col, score in self.removed_series_too_low_metric:
+                self.evaluation_metric_per_channel[col] = score
+                start2 = time.process_time()
+                ranks[col] = probabilities2rank(predictions_removed_signals[col])
+                self.times["Computing ranks"] += time.process_time() - start2
+
+        if self.print_times:
+            print("         Total: Time evaluating each channel: ", time.process_time() - start)
+            print("             | Time extracting features: ", self.times["Extracting features"])
+            print("             | Time training model: ", self.times["Training model"])
+            print("             | Time predictions: ", self.times["Predictions"])
+            print("             | Time computing evaluation metric: ", self.times["Computing evaluation metric"])
+            print("             | Time removing uninformative signals: ",
+                  self.times["Removing irrelevant channels"])
             print("             | Time computing ranks: ", self.times["Computing ranks"])
             print("             | Time computing multiple models: ", self.times["Multiple models weighing"])
         return ranks, best_removed_score
@@ -495,6 +641,90 @@ class TSelect(TransformerMixin):
             self.models["Scaler"][col] = scaler
 
         return features_train, features_test
+
+    def extract_features_generator(self, gen, validation=False) -> (Dict[str | int, np.ndarray], np.ndarray):
+        """
+        Extract features from a generator that yields batches of data.
+        The generator should yield batches of data in the format (x_batch, y_batch), where x_batch is a pandas DataFrame,
+        a numpy array or a tf.Tensor, and y_batch is the target variable.
+
+        Parameters
+        ----------
+        gen: generator
+            A generator that yields batches of data in the format (x_batch, y_batch). The x_batch can be a pandas DataFrame,
+            a numpy array or a tf.Tensor. The y_batch is the target variable.
+        validation: bool, default=False
+            Whether the data is used for validation or not. If True, the features are scaled and NaN columns are dropped
+        Returns
+        -------
+        Dict[str | int, np.ndarray]
+            A dictionary with the features for each channel. The keys are the channel names and the values are the features.
+        np.ndarray
+            The target variable as a numpy array. If no data was yielded by the generator, an empty numpy array is returned.
+        """
+        import tensorflow as tf
+        all_features = defaultdict(list)
+        y = []
+        for x_batch, y_batch in gen:
+            gc.collect()
+            if isinstance(x_batch, pd.DataFrame):
+                self.columns = x_batch.columns
+                self.map_columns_np = {col: i for i, col in enumerate(x_batch.columns)}
+                self.index = x_batch.index
+                x_batch = self.preprocessing(x_batch)
+                y_batch = y_batch.values if isinstance(y_batch, pd.Series) else y_batch
+            elif isinstance(x_batch, np.ndarray) or isinstance(x_batch, tf.Tensor):
+                if isinstance(x_batch, tf.Tensor):
+                    x_batch = x_batch.numpy().squeeze(-1) if x_batch.ndim > 3 else x_batch.numpy()
+                    y_batch = y_batch.numpy() if isinstance(y_batch, tf.Tensor) else y_batch
+                x_batch = self.preprocessing(x_batch.transpose(0, 2, 1))
+                self.columns = list(range(x_batch.shape[1])) if self.columns is None else self.columns
+                self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
+                self.index = range(x_batch.shape[0])
+            else:
+                raise ValueError("The input data should be either a pandas DataFrame, a numpy array or a tf.Tensor.")
+
+            y.append(y_batch[:, 1] if y_batch.ndim > 1 else y_batch)
+            for i, col in enumerate(self.columns):
+                x_i = Collection(x_batch[:, i, :].reshape(x_batch.shape[0], 1, x_batch.shape[2]), from_numpy3d=True)
+                stats: np.ndarray = SinglePassStatistics().transform(x_i).values[:, :, 0].astype(np.float32)
+                all_features[col].append(stats)
+
+        # Concatenate all features for each channel
+        for col in all_features.keys():
+            # noinspection PyTypeChecker
+            all_features[col] = np.concatenate(all_features[col], axis=0)
+
+            if validation:
+                nan_cols = self.models["DroppedNanCols"].get(col, None)
+                all_features[col] = all_features[col][:, ~nan_cols] if nan_cols is not None else all_features[col]
+                replace_nans_by_col_mean(all_features[col])
+                scaler = self.models["Scaler"].get(col, None)
+                if scaler is not None:
+                    all_features[col] = scaler.transform(all_features[col])
+            else:
+                # Drop all NaN columns
+                if np.isnan(all_features[col]).any():
+                    nan_cols = np.isnan(all_features[col]).all(axis=0)
+                    if col not in self.models["DroppedNanCols"].keys():
+                        self.models["DroppedNanCols"][col] = nan_cols
+                    all_features[col] = all_features[col][:, ~nan_cols]
+
+                # Drop rows where NaN still exist
+                if np.isnan(all_features[col]).any():
+                    replace_nans_by_col_mean(all_features[col])
+
+                # Scale the features
+                scaler = MinMaxScaler()
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    all_features[col] = scaler.fit_transform(all_features[col])
+                if col not in self.models["Scaler"].keys():
+                    self.models["Scaler"][col] = scaler
+
+        return all_features, np.concatenate(y, axis=0) if len(y) > 0 else np.array([])
+
+
 
     def train_test_split(self, X: Union[np.ndarray, Dict[Union[str, int], Collection]]) -> (list, list):
         """
