@@ -9,14 +9,29 @@ from setuptools import Distribution
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
+# Path to your src folder
+SRC_DIR = Path(__file__).parent / "src"
 
 def build() -> None:
     ext_modules = cythonize([
-    Extension(
-        'tselect.rank_correlation.spearman', ['tselect/rank_correlation/spearman.pyx'],
-        include_dirs=[np.get_include()]
-    ), ]
-    )
+            Extension(
+                'tselect.rank_correlation.spearman',
+                [str(SRC_DIR / 'tselect/rank_correlation/spearman.pyx')],
+                include_dirs=[np.get_include()],
+            ),
+            Extension(
+                'tsfuse.data.df', [str(SRC_DIR / 'tsfuse/data/df.pyx')],
+                include_dirs=[np.get_include()]
+        ),
+            Extension(
+                'tsfuse.transformers.calculators.cstatistics', [str(SRC_DIR / 'tsfuse/transformers/calculators/cstatistics.pyx')],
+                include_dirs=[np.get_include()]
+        ),
+            Extension(
+                'tsfuse.transformers.calculators.queries', [str(SRC_DIR / 'tsfuse/transformers/calculators/queries.pyx')],
+                include_dirs=[np.get_include()]
+        ),
+            ]),
 
     distribution = Distribution({
         "name": "package",

@@ -56,9 +56,6 @@ class TSelect(TransformerMixin):
                 - filtering_threshold_corr: float, default=0.7
                      The threshold used for clustering rank correlations. All predictions with a rank correlation above this
                      threshold are considered correlated.
-                - irrelevant_better_than_random: bool, default=False
-                    Whether to filter out irrelevant series by comparing them with a model trained on a randomly shuffled
-                    target. If the channel performs Better Than Random (BTR), it is kept.
                 - filtering_test_size: float, default=None
                     The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
                     percentage of the data that is used for computing the AUC score. The remaining data is used for training.
@@ -83,8 +80,6 @@ class TSelect(TransformerMixin):
         self.map_columns_np = None
         self.index = None
         self.models = {"Models": {}, "Scaler": {}, "DroppedNanCols": {}}
-        # self.print_times = print_times
-        # self.feature_extractor = feature_extractor
 
     def transform(self, X: Union[pd.DataFrame, Dict[Union[str, int], Collection]]) \
             -> Union[pd.DataFrame, Dict[Union[str, int], Collection]]:

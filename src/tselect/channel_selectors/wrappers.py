@@ -1,7 +1,7 @@
 import copy
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Iterable
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -10,13 +10,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
-# from tsfuse.data import Collection
-# from tselect.utils import replace_nans_by_col_mean
 from tselect.utils.constants import SEED
 from tsfuse.utils import encode_onehot
-# from tsfuse.transformers import SinglePassStatistics
 
-from TSelect.tselect.tselect.utils.constants import Keys
+from tselect.utils.constants import Keys
 
 
 class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
@@ -44,53 +41,8 @@ class SequentialChannelSelector(BaseEstimator, TransformerMixin, ABC):
     def fit(self, X: pd.DataFrame, y, force=False):
         pass
 
-    # @staticmethod
-    # def extract_features(X: np.ndarray) -> Dict[int, np.ndarray]:
-    #     features = dict()
-    #     for i in range(X.shape[1]):
-    #         X_i = Collection(X[:, i, :].reshape(X.shape[0], 1, X.shape[2]), from_numpy3d=True)
-    #         features[i] = SinglePassStatistics().transform(X_i).values[:, :, 0]
-    #
-    #     return features
-    #
-    # @staticmethod
-    # def preprocess_extracted_features(features_train: np.ndarray, features_test: np.ndarray) -> (np.ndarray, np.ndarray):
-    #     """
-    #     Preprocess the extracted features by dropping NaN columns and scaling the data.
-    #
-    #     Parameters
-    #     ----------
-    #     features_train: np.ndarray
-    #         The training features
-    #     features_test: np.ndarray
-    #         The test features
-    #
-    #     Returns
-    #     -------
-    #     features_train: np.ndarray
-    #         The preprocessed training features
-    #     features_test: np.ndarray
-    #         The preprocessed test features
-    #
-    #     """
-    #     # Drop all NaN columns
-    #     if np.isnan(features_train).any():
-    #         nan_cols = np.isnan(features_train).all(axis=0)
-    #         features_train = features_train[:, ~nan_cols]
-    #         features_test = features_test[:, ~nan_cols]
-    #     # Impute rows where NaN still exist
-    #     if np.isnan(features_train).any():
-    #         replace_nans_by_col_mean(features_train)
-    #         replace_nans_by_col_mean(features_test)
-    #     scaler = MinMaxScaler()
-    #     with warnings.catch_warnings():
-    #         warnings.simplefilter("ignore")
-    #         features_train = scaler.fit_transform(features_train)
-    #         features_test = scaler.transform(features_test)
-    #     return features_train, features_test
 
     def evaluate_model(self, X_train, X_test, y_train, y_test):
-        # X_train, X_test = self.preprocess_extracted_features(X_train, X_test)
         try:
             clf = clone(self.model)
         except TypeError:
