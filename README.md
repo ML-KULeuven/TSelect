@@ -10,7 +10,7 @@ pip install tselect
 (Temporary until published)
 Clone the repository.
 ```
-git clone https://github.com/LorenNuyts/TSelect.git
+git clone https://github.com/ML-KULeuven/TSelect.git
 ```
 Go to the newly created repository and install the requirements with pip.
 ```
