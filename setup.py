@@ -16,7 +16,7 @@ setup(
     setup_requires=[
         'setuptools>=80.9.0',
         'Cython>=3.1.4',
-        'numpy>=2.3.3'
+        'numpy>=2.2.6'
     ],
     install_requires=[
         'six>=1.17.0',
@@ -24,9 +24,9 @@ setup(
         'matplotlib>=3.10.6',
         'pandas>=2.3.2',
         'pycatch22>=0.4.5',
-        'scikit_learn>=1.7.2',
+        'scikit_learn>=1.6.1',
         'sktime>=0.38.5',
-        'scipy>=1.16.2',
+        'scipy>=1.15.3',
         'statsmodels>=0.14.5',
         'Pint>=0.25',
     ],
