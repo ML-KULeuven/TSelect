@@ -27,5 +27,9 @@ tselect/tselect/__pycache__/
 tselect/tselect/rank_correlation/build/
 
 tselect/tselect/rank_correlation/spearman.c
+/TSelect/src/tsfuse/data/df.c
+/TSelect/src/tsfuse/transformers/calculators/build/
+/TSelect/src/tsfuse/transformers/calculators/cstatistics.c
+/TSelect/src/tsfuse/transformers/calculators/queries.c
 
 *.so
