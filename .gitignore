@@ -5,31 +5,30 @@ tselect/build/
 
 tselect/dist/
 
-tselect/tselect.egg-info/
+src/tselect/tselect.egg-info/
 
-tselect/tsfilter.egg-info/
+src/tselect/tsfilter.egg-info/
 
-tsfuse/.github/
+src/tsfuse/.github/
 
-tsfuse/docs/
+src/tsfuse/docs/
 
-tsfuse/docsource/
+src/tsfuse/docsource/
 
-tsfuse/tests/
+src/tsfuse/tests/
 
 dist/
 
-tselect/tselect/rank_correlation/build/temp.linux-x86_64-cpython-310/
-
-tselect/tselect/__pycache__/
 **/__pycache__/
 
-tselect/tselect/rank_correlation/build/
+src/tselect/tselect/rank_correlation/build/
 
-tselect/tselect/rank_correlation/spearman.c
-/TSelect/src/tsfuse/data/df.c
-/TSelect/src/tsfuse/transformers/calculators/build/
-/TSelect/src/tsfuse/transformers/calculators/cstatistics.c
-/TSelect/src/tsfuse/transformers/calculators/queries.c
+src/tselect/tselect/rank_correlation/spearman.c
+src/tsfuse/data/df.c
+src/tsfuse/transformers/calculators/build/
+src/tsfuse/transformers/calculators/cstatistics.c
+src/tsfuse/transformers/calculators/queries.c
 
 *.so
+
+*.c
