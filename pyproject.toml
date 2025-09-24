@@ -1,15 +1,27 @@
 [tool.poetry]
 name = "tselect"
-version = "0.1.1"
-description = "Package for selecting the relevant and non-redundant signals for multivariate time series classification."
-authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>",
-           "Arne De Brabandere"]
+version = "1.0.0"
+description = "Package for selecting the relevant and non-redundant channels for multivariate time series classification."
+authors = ["Loren Nuyts <loren.nuyts@kuleuven.be>", "Arne De Brabandere"]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.10, <3.11"
-
+build = 'build.py'
+packages = [
+    { include = "tselect", from = "src" },
+    { include = "tsfuse", from = "src" }
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools", "wheel", "Cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+cython = "^3.1.4"
+matplotlib = "^3.10.6"
+numpy = ">=2.2.6"
+pandas = "^2.3.2"
+pycatch22 = "^0.4.5"
+scikit-learn = ">=1.6.1"
+scipy = ">=1.15.3"
+setuptools = "^80.9.0"
+sktime = "^0.38.5"
