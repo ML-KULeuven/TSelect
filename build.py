@@ -31,7 +31,7 @@ def build() -> None:
                 'tsfuse.transformers.calculators.queries', [str(SRC_DIR / 'tsfuse/transformers/calculators/queries.pyx')],
                 include_dirs=[np.get_include()]
         ),
-            ]),
+            ])
 
     distribution = Distribution({
         "name": "package",
@@ -45,7 +45,7 @@ def build() -> None:
     # Copy built extensions back to the project
     for output in cmd.get_outputs():
         output = Path(output)
-        relative_extension = Path(".") / output.relative_to(cmd.build_lib)
+        relative_extension = SRC_DIR / output.relative_to(cmd.build_lib)
 
         shutil.copyfile(output, relative_extension)
         mode = os.stat(relative_extension).st_mode

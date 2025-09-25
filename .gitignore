@@ -32,3 +32,5 @@ src/tsfuse/transformers/calculators/queries.c
 *.so
 
 *.c
+
+build/
