@@ -34,34 +34,49 @@ class TSelect(TransformerMixin):
     """
 
     def __init__(self,
-                 config: Config = get_default_config()
+                 irrelevant_selector: bool = True,
+                 irrelevant_hard_threshold: float = 0.5,
+                 irrelevant_percentage_to_keep: float = 0.6,
+                 redundant_selector: bool = True,
+                 redundant_correlation_threshold: float = 0.7,
+                 validation_size: float = None,
+                 random_state: int = SEED,
+                 config: Config = None
                  ):
         """
         Parameters
         ----------
-        config: Config
-            The configuration object that contains all hyperparameters for the TSelect channel selector:
-                - irrelevant_filter: bool, default=True
-                    Whether to filter out irrelevant series based on their AUC score
-                - redundant_filter: bool, default=True
-                    Whether to filter out redundant series based on their rank correlation
-                - random_state: int, default=SEED
-                    The random state used throughout the class.
-                - filtering_threshold_auc: float, default=0.5
-                    The threshold to use for filtering out irrelevant series based on their AUC score. All signals below this
-                    threshold are removed.
-                - auc_percentage: float, default=0.6
-                    The percentage of series to keep based on their AUC score. This parameter is only used if
-                    irrelevant_filter=True. If auc_percentage=0.6, the 60% series with the highest AUC score are kept.
-                - filtering_threshold_corr: float, default=0.7
-                     The threshold used for clustering rank correlations. All predictions with a rank correlation above this
-                     threshold are considered correlated.
-                - filtering_test_size: float, default=None
-                    The test size to use for filtering out irrelevant series based on their AUC score. The test size is the
-                    percentage of the data that is used for computing the AUC score. The remaining data is used for training.
-                    If None, the train size is derived from max(100, 0.25*nb_instances). The test size are then the remaining
-                    instances.
+        irrelevant_selector: bool, default=True
+            Whether to only include the relevant channels and remove the irrelevant onces.
+        irrelevant_hard_threshold: float, default=0.5
+            The hard threshold used to remove irrelevant channels. Everything below this threshold is considered to be worse
+            than random and is removed.
+        irrelevant_percentage_to_keep: float, default=0.6
+            The percentage of best-performing channels to keep.
+        redundant_selector: bool, default=True
+            Whether to only include non-redundant channels and remove the redundant ones.
+        redundant_correlation_threshold: float, default=0.7
+            The threshold used to cluster the rank correlations. All channels with a rank correlation above this threshold
+            are considered to be correlated.
+        validation_size: float, default=None
+            The size of the validation set used to compute the evaluation metric. If None, the validation size is derived from
+            max(100, 0.25*nb_instances). The train set then includes the remaining instances.
+        random_state: int, default=SEED
+            The random state used throughout the class.
+        config: Config, optional
+            The configuration object is mainly introduced for easier development of TSelect. It contains all
+            hyperparameters for the TSelect channel selector. If a Config object is given, all other given parameters are
+            ignored and the values from the Config object are used. Users of TSelect can ignore this parameter
         """
+        if config is None:
+            config = Config(irrelevant_filter=irrelevant_selector,
+                            filtering_threshold_auc=irrelevant_hard_threshold,
+                            auc_percentage=irrelevant_percentage_to_keep,
+                            redundant_filter=redundant_selector,
+                            filtering_threshold_corr=redundant_correlation_threshold,
+                            filtering_test_size=validation_size,
+                            random_state=random_state)
+
         self.config = config
         self.removed_series_auc = set()
         self.removed_series_corr = set()
