@@ -164,7 +164,7 @@ class TSelect(TransformerMixin):
             self.index = X.index
             if X_val is not None:
                 assert isinstance(X_val, pd.DataFrame)
-                X_val = self.preprocessing(X_val)
+                X_val = self.preprocessing(X_val, fit_scaler=False)
 
         elif isinstance(X, np.ndarray):
             X_np = self.preprocessing(X.transpose(0, 2, 1))
@@ -173,14 +173,14 @@ class TSelect(TransformerMixin):
             self.index = range(X.shape[0])
             if X_val is not None:
                 assert isinstance(X_val, np.ndarray)
-                X_val = self.preprocessing(X_val)
+                X_val = self.preprocessing(X_val, fit_scaler=False)
         elif isinstance(X, dict):
             X_tsfuse = self.preprocessing_dict(X)
             self.columns = list(X.keys())
             self.index = X_tsfuse[self.columns[0]].index
             if X_val is not None:
                 assert isinstance(X_val, dict)
-                X_val = self.preprocessing_dict(X_val)
+                X_val = self.preprocessing_dict(X_val, fit_scaler=False)
 
         if self.selected_channels is not None and not force:
             return None
@@ -275,7 +275,7 @@ class TSelect(TransformerMixin):
         return None
 
 
-    def preprocessing(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
+    def preprocessing(self, X: Union[pd.DataFrame, np.ndarray], fit_scaler=True) -> np.ndarray:
         """
         Preprocess the data before fitting the filter.
 
@@ -283,6 +283,8 @@ class TSelect(TransformerMixin):
         ----------
         X: pd.DataFrame
             The data to preprocess
+        fit_scaler: bool, default=True
+            Whether to fit the scaler or use the existing one.
 
         Returns
         -------
@@ -291,15 +293,18 @@ class TSelect(TransformerMixin):
 
         """
         from TSelect.tselect.tselect import MinMaxScaler3D
-        self.scaler = MinMaxScaler3D()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            X_np = self.scaler.fit_transform(X)
+        if fit_scaler:
+            self.scaler = MinMaxScaler3D()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                X_np = self.scaler.fit_transform(X)
+        else:
+            X_np = self.scaler.transform(X)
         if np.isnan(X_np).any():
             interpolate_nan_3d(X_np, inplace=True)
         return X_np
 
-    def preprocessing_dict(self, X: Dict[Union[str, int], Collection]) -> Dict[Union[str, int], Collection]:
+    def preprocessing_dict(self, X: Dict[Union[str, int], Collection], fit_scaler=True) -> Dict[Union[str, int], Collection]:
         """
         Preprocess the data before fitting the filter if the data is in TSFuse format.
 
@@ -307,6 +312,8 @@ class TSelect(TransformerMixin):
         ----------
         X: Dict[Union[str, int], Collection]
             The data to preprocess
+        fit_scaler: bool, default=True
+            Whether to fit the scaler or use the existing one.
 
         Returns
         -------
@@ -315,10 +322,13 @@ class TSelect(TransformerMixin):
 
         """
         from TSelect.tselect.tselect.utils.scaler import MinMaxScalerCollections
-        self.scaler = MinMaxScalerCollections()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            scaled_X = self.scaler.fit_transform(X, inplace=True)
+        if fit_scaler:
+            self.scaler = MinMaxScalerCollections()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                scaled_X = self.scaler.fit_transform(X, inplace=True)
+        else:
+            scaled_X = self.scaler.transform(X)
         for key in X.keys():
             if np.isnan(scaled_X[key].values).any():
                 ffill_nan(scaled_X[key].values, inplace=True)
@@ -665,24 +675,36 @@ class TSelect(TransformerMixin):
         import tensorflow as tf
         all_features = defaultdict(list)
         y = []
+        first_batch = True and not validation
         for x_batch, y_batch in gen:
             gc.collect()
             if isinstance(x_batch, pd.DataFrame):
-                self.columns = x_batch.columns
-                self.map_columns_np = {col: i for i, col in enumerate(x_batch.columns)}
-                self.index = x_batch.index
-                x_batch = self.preprocessing(x_batch)
+                if first_batch:
+                    self.columns = x_batch.columns
+                    self.map_columns_np = {col: i for i, col in enumerate(x_batch.columns)}
+                    self.index = x_batch.index
+                else:
+                    assert list(x_batch.columns) == self.columns, "The columns of the batches yielded by the generator "\
+                                                                 "should be the same for all batches."
+                    self.index = self.index.union(x_batch.index)
+                x_batch = self.preprocessing(x_batch, fit_scaler=first_batch)
                 y_batch = y_batch.values if isinstance(y_batch, pd.Series) else y_batch
             elif isinstance(x_batch, np.ndarray) or isinstance(x_batch, tf.Tensor):
                 if isinstance(x_batch, tf.Tensor):
                     x_batch = x_batch.numpy().squeeze(-1) if x_batch.ndim > 3 else x_batch.numpy()
                     y_batch = y_batch.numpy() if isinstance(y_batch, tf.Tensor) else y_batch
-                x_batch = self.preprocessing(x_batch.transpose(0, 2, 1))
-                self.columns = list(range(x_batch.shape[1])) if self.columns is None else self.columns
-                self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
-                self.index = range(x_batch.shape[0])
+                x_batch = self.preprocessing(x_batch.transpose(0, 2, 1), fit_scaler=first_batch)
+                if first_batch:
+                    self.columns = list(range(x_batch.shape[1])) if self.columns is None else self.columns
+                    self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
+                    self.index = range(x_batch.shape[0])
+                else:
+                    assert x_batch.shape[1] == len(self.columns), "The number of columns of the batches yielded by the "\
+                                                                 "generator should be the same for all batches."
+                    self.index = range(max(self.index) + x_batch.shape[0])
             else:
                 raise ValueError("The input data should be either a pandas DataFrame, a numpy array or a tf.Tensor.")
+            first_batch = False
 
             y.append(y_batch[:, 1] if y_batch.ndim > 1 else y_batch)
             for i, col in enumerate(self.columns):
