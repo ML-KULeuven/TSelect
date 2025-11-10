@@ -676,35 +676,41 @@ class TSelect(TransformerMixin):
         all_features = defaultdict(list)
         y = []
         first_batch = True and not validation
-        for x_batch, y_batch in gen:
+        for batch_ix, (x_batch, y_batch) in enumerate(gen):
             gc.collect()
-            if isinstance(x_batch, pd.DataFrame):
-                if first_batch:
-                    self.columns = x_batch.columns
-                    self.map_columns_np = {col: i for i, col in enumerate(x_batch.columns)}
-                    self.index = x_batch.index
+            try:
+                if isinstance(x_batch, pd.DataFrame):
+                    if first_batch:
+                        self.columns = x_batch.columns
+                        self.map_columns_np = {col: i for i, col in enumerate(x_batch.columns)}
+                        self.index = x_batch.index
+                    else:
+                        assert list(x_batch.columns) == self.columns, "The columns of the batches yielded by the generator "\
+                                                                     "should be the same for all batches."
+                        self.index = self.index.union(x_batch.index)
+                    x_batch = self.preprocessing(x_batch, fit_scaler=first_batch)
+                    y_batch = y_batch.values if isinstance(y_batch, pd.Series) else y_batch
+                elif isinstance(x_batch, np.ndarray) or isinstance(x_batch, tf.Tensor):
+                    if isinstance(x_batch, tf.Tensor):
+                        x_batch = x_batch.numpy().squeeze(-1) if x_batch.ndim > 3 else x_batch.numpy()
+                        y_batch = y_batch.numpy() if isinstance(y_batch, tf.Tensor) else y_batch
+                    x_batch = self.preprocessing(x_batch.transpose(0, 2, 1), fit_scaler=first_batch)
+                    if first_batch:
+                        self.columns = list(range(x_batch.shape[1])) if self.columns is None else self.columns
+                        self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
+                        self.index = range(x_batch.shape[0])
+                    else:
+                        assert x_batch.shape[1] == len(self.columns), "The number of columns of the batches yielded by the "\
+                                                                     "generator should be the same for all batches."
+                        self.index = range(max(self.index) + x_batch.shape[0])
                 else:
-                    assert list(x_batch.columns) == self.columns, "The columns of the batches yielded by the generator "\
-                                                                 "should be the same for all batches."
-                    self.index = self.index.union(x_batch.index)
-                x_batch = self.preprocessing(x_batch, fit_scaler=first_batch)
-                y_batch = y_batch.values if isinstance(y_batch, pd.Series) else y_batch
-            elif isinstance(x_batch, np.ndarray) or isinstance(x_batch, tf.Tensor):
-                if isinstance(x_batch, tf.Tensor):
-                    x_batch = x_batch.numpy().squeeze(-1) if x_batch.ndim > 3 else x_batch.numpy()
-                    y_batch = y_batch.numpy() if isinstance(y_batch, tf.Tensor) else y_batch
-                x_batch = self.preprocessing(x_batch.transpose(0, 2, 1), fit_scaler=first_batch)
-                if first_batch:
-                    self.columns = list(range(x_batch.shape[1])) if self.columns is None else self.columns
-                    self.map_columns_np = {col: i for i, col in enumerate(self.columns)}
-                    self.index = range(x_batch.shape[0])
-                else:
-                    assert x_batch.shape[1] == len(self.columns), "The number of columns of the batches yielded by the "\
-                                                                 "generator should be the same for all batches."
-                    self.index = range(max(self.index) + x_batch.shape[0])
-            else:
-                raise ValueError("The input data should be either a pandas DataFrame, a numpy array or a tf.Tensor.")
-            first_batch = False
+                    raise ValueError("The input data should be either a pandas DataFrame, a numpy array or a tf.Tensor.")
+                first_batch = False
+            except Exception as e:
+                print(f"Error processing batch {batch_ix}: {e}")
+                print("Current index:", self.index)
+                print("Current length index:", len(self.index))
+                raise e
 
             y.append(y_batch[:, 1] if y_batch.ndim > 1 else y_batch)
             for i, col in enumerate(self.columns):
