@@ -254,6 +254,8 @@ class TSelect(TransformerMixin):
                 warnings.warn(f"No series passed the threshold in the irrelevant selector, please make the threshold "
                               f"less strict. The best removed score was {best_removed_score}. For this run, all signals "
                                 f"that passed the absolute threshold are kept.")
+                print(f"Nb channels in evaluation metric: {len(self.evaluation_metric_per_channel)}")
+                print(f"Nb channels removed for low metric: {len(self.removed_series_too_low_metric)}")
 
             elif len(ranks_filtered) == 1 and self.redundant_filter:
                 self.rank_correlation = dict()
