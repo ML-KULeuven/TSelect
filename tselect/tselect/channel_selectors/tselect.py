@@ -859,6 +859,7 @@ class TSelect(TransformerMixin):
         threshold = self.evaluation_metric_per_channel[self.sorted_scores[-i]]  # the threshold below which we will delete items
         first_ix = self.sorted_scores.index(threshold)
         true_percentage = (len(self.evaluation_metric_per_channel.keys()) - first_ix) / len(self.evaluation_metric_per_channel.keys())
+        print(f" True percentage: {true_percentage}, desired percentage: {p}")
         if true_percentage < p + 0.05:
             j = i
             for j in range(i, len(self.sorted_scores)):
