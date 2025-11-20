@@ -855,6 +855,18 @@ class TSelect(TransformerMixin):
         if i == 0:
             return data_to_filter
         threshold = self.evaluation_metric_per_channel[self.sorted_scores[-i]]  # the threshold below which we will delete items
+        first_ix = self.sorted_scores.index(threshold)
+        true_percentage = (len(self.evaluation_metric_per_channel.keys()) - first_ix) / len(self.evaluation_metric_per_channel.keys())
+        if true_percentage < p + 0.05:
+            j = i
+            for j in range(i, len(self.sorted_scores)):
+                if self.evaluation_metric_per_channel[self.sorted_scores[j]] != threshold:
+                    threshold = self.evaluation_metric_per_channel[self.sorted_scores[j]]
+                    break
+            if j == len(self.sorted_scores) - 1:
+                warnings.warn(f"The {true_percentage} worst channels all have the same score of {threshold}. "
+                              f"All these channels will be kept.")
+                return data_to_filter
         self.irrelevant_selector_threshold(threshold)
         if data_to_filter is not None:
             return {k: data_to_filter[k] for k in self.sorted_scores if k in data_to_filter.keys()}
@@ -877,7 +889,7 @@ class TSelect(TransformerMixin):
             if self.evaluation_metric_per_channel[self.sorted_scores[i]] > threshold if self.higher_is_better else self.evaluation_metric_per_channel[self.sorted_scores[i]] < threshold:
                 break
             self.removed_series_too_low_metric.add((self.sorted_scores[i], self.evaluation_metric_per_channel[self.sorted_scores[i]]))
-        self._sorted_scores = self.sorted_scores[:i + 1]
+        self._sorted_scores = self.sorted_scores[:i + 1] if i != 0 else []
         self.evaluation_metric_per_channel = {k: self.evaluation_metric_per_channel[k] for k in self.sorted_scores}
 
     def irrelevant_selector_multiple_models(self, group_sizes: List[float], group_amounts: List[int],
