@@ -860,7 +860,7 @@ class TSelect(TransformerMixin):
         first_ix = self.sorted_scores.index(threshold)
         true_percentage = first_ix / len(self.evaluation_metric_per_channel.keys())
         print(f" True percentage: {true_percentage}, desired percentage: {p}")
-        if true_percentage < p + 0.05:
+        if true_percentage < p + 0.01:
             j = i
             for j in range(i, len(self.sorted_scores)):
                 if self.evaluation_metric_per_channel[self.sorted_scores[j]] != threshold:
