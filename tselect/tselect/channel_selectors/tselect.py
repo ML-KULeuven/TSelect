@@ -863,6 +863,11 @@ class TSelect(TransformerMixin):
             print(f"Indexed threshold: {threshold}")
             first_ix = sorted_values.index(threshold)
             print(f"Index in list: {first_ix}")
+            # ask to continue
+            proceed = input(f"Channels are selected. Proceed? (y/n): ")
+            if proceed.lower() not in ['y', 'yes']:
+                print("Aborting.")
+                exit()
         except ValueError as e:
             print(f"Sorted scores: {self.sorted_scores}")
             print(f"Sorted values: {[self.evaluation_metric_per_channel[k] for k in self.sorted_scores]}")
