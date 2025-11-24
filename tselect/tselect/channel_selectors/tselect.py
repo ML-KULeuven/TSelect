@@ -858,9 +858,14 @@ class TSelect(TransformerMixin):
             return data_to_filter
         threshold = self.evaluation_metric_per_channel[self.sorted_scores[-i]]  # the threshold below which we will delete items
         try:
-            first_ix = self.sorted_scores.index(threshold)
+            sorted_values = [self.evaluation_metric_per_channel[k] for k in self.sorted_scores]
+            print(f"Sorted values: {sorted_values}")
+            print(f"Indexed threshold: {threshold}")
+            first_ix = sorted_values.index(threshold)
+            print(f"Index in list: {first_ix}")
         except ValueError as e:
             print(f"Sorted scores: {self.sorted_scores}")
+            print(f"Sorted values: {[self.evaluation_metric_per_channel[k] for k in self.sorted_scores]}")
             print(f"Indexed threshold: {threshold}")
             print(f"Index in list: {-i}")
             raise e
