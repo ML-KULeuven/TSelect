@@ -862,14 +862,14 @@ class TSelect(TransformerMixin):
         true_percentage = first_ix / len(self.evaluation_metric_per_channel.keys())
         print(f"Threshold: {threshold}, true percentage: {true_percentage}, desired percentage: {p}")
         print(f" Evaluation metrics: {self.evaluation_metric_per_channel}")
-        if true_percentage < p + 0.01:
+        if true_percentage + 0.01 < p:
             print("Adapting threshold to avoid removing too many series.")
-            j = i
-            for j in range(i, len(self.sorted_scores)):
+            j = -i
+            for j in range(-i, 0):
                 if self.evaluation_metric_per_channel[self.sorted_scores[j]] != threshold:
                     threshold = self.evaluation_metric_per_channel[self.sorted_scores[j]]
                     break
-            if j == len(self.sorted_scores) - 1:
+            if j == -1:
                 warnings.warn(f"The {true_percentage} worst channels all have the same score of {threshold}. "
                               f"All these channels will be kept.")
                 proceed = input(f"All channels are kept. Proceed? (y/n): ")
