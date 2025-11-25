@@ -860,10 +860,7 @@ class TSelect(TransformerMixin):
         sorted_values = [self.evaluation_metric_per_channel[k] for k in self.sorted_scores]
         first_ix = sorted_values.index(threshold)
         true_percentage = first_ix / len(self.evaluation_metric_per_channel.keys())
-        print(f"Threshold: {threshold}, true percentage: {true_percentage}, desired percentage: {p}")
-        print(f" Evaluation metrics: {self.evaluation_metric_per_channel}")
         if true_percentage + 0.01 < p:
-            print("Adapting threshold to avoid removing too many series.")
             previous_threshold = threshold
             for j in range(-i, 0):
                 if self.evaluation_metric_per_channel[self.sorted_scores[j]] != threshold:
@@ -872,16 +869,7 @@ class TSelect(TransformerMixin):
             if previous_threshold == threshold:
                 warnings.warn(f"The {100-true_percentage*100}% worst channels all have the same score of {threshold}. "
                               f"All these channels will be kept.")
-                proceed = input(f"All channels are kept. Proceed? (y/n): ")
-                if proceed.lower() not in ['y', 'yes']:
-                    print("Aborting.")
-                    exit()
                 return data_to_filter
-        print(f"Using threshold {threshold} to remove irrelevant series.")
-        proceed = input(f"Proceed? (y/n): ")
-        if proceed.lower() not in ['y', 'yes']:
-            print("Aborting.")
-            exit()
         self.irrelevant_selector_threshold(threshold)
         if data_to_filter is not None:
             return {k: data_to_filter[k] for k in self.sorted_scores if k in data_to_filter.keys()}
