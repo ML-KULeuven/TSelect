@@ -860,7 +860,7 @@ class TSelect(TransformerMixin):
         sorted_values = [self.evaluation_metric_per_channel[k] for k in self.sorted_scores]
         first_ix = sorted_values.index(threshold)
         true_percentage = first_ix / len(self.evaluation_metric_per_channel.keys())
-        if true_percentage + 0.01 < p:
+        if true_percentage + 0.1 < p:
             previous_threshold = threshold
             for j in range(-i, 0):
                 if self.evaluation_metric_per_channel[self.sorted_scores[j]] != threshold:
